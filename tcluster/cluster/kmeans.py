@@ -5,14 +5,14 @@
 from __future__ import division
 
 import random
-
 import numpy as np
-from tcluster.metrics.jsd import jensen_shannon_divergence
+
 # http://docs.scipy.org/doc/scipy/reference/spatial.html
 from scipy.sparse import issparse  # $scipy/sparse/csr.py
 from scipy.spatial.distance import cdist  # $scipy/spatial/distance.py
 from sklearn.metrics.pairwise import cosine_distances
 
+from tcluster.metrics.jsd import jensen_shannon_divergence
 from tcluster.metrics.kld import kld_cdist_sparse
 
 __date__ = "2011-11-17 Nov denis"
