@@ -1,4 +1,5 @@
 from __future__ import division
+from builtins import range
 
 import numpy as np
 from scipy.sparse import issparse
@@ -60,8 +61,8 @@ def kld_cdist(XA, XB, p_B=None, a=0.1):
     mB = sB[0]
     n = s[1]
     dm = np.zeros((mA, mB), dtype=np.double)
-    for i in xrange(0, mA):
-        for j in xrange(0, mB):
+    for i in range(0, mA):
+        for j in range(0, mB):
             dm[i, j] = kld_metric(XA[i, :], XB[j, :], p_B, a)
 
     return dm
