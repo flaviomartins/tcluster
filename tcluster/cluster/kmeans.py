@@ -148,7 +148,15 @@ def nearestcentres(X, centres, metric="euclidean", p=2):
             euclidean2 (~ withinss) is more sensitive to outliers,
             cityblock (manhattan, L1) less sensitive
     """
-    D = cdist(X, centres, metric=metric, p=p)  # |X| x |centres|
+    if metric in ['cosine', 'cos']:
+        D = cosine_distances(X, centres)
+    elif metric in ['jsd', 'jensen-shannon']:
+        D = cdist_sparse(X, centres, metric=jensen_shannon_divergence)
+    elif metric in ['kld', 'kullback-leibler']:
+        centres_mean = centres.mean(axis=0)
+        D = kld_cdist_sparse(X, centres, p_B=centres_mean)
+    else:
+        D = cdist_sparse(X, centres, metric=metric, p=p)  # |X| x |centres|
     return D.argmin(axis=1)
 
 
