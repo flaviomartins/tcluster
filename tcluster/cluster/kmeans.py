@@ -25,7 +25,7 @@ __date__ = "2011-11-17 Nov denis"
 # vs unsupervised / semi-supervised svm
 
 
-def kmeans(X, centres, delta=.001, maxiter=10, metric="euclidean", p=2, verbose=1):
+def kmeans(X, centres, delta=.001, maxiter=10, metric="euclidean", p=2, a=.1, verbose=1):
     """ centres, Xtocentre, distances = kmeans( X, initial centres ... )
     in:
         X N x dim  may be sparse
@@ -65,7 +65,7 @@ def kmeans(X, centres, delta=.001, maxiter=10, metric="euclidean", p=2, verbose=
             D = cdist_sparse(X, centres, metric=jensen_shannon_divergence)
         elif metric in ['kld', 'kullback-leibler']:
             centres_mean = centres.mean(axis=0)
-            D = kld_cdist_sparse(X, centres, p_B=centres_mean)
+            D = kld_cdist_sparse(X, centres, p_B=centres_mean, a=a)
         else:
             D = cdist_sparse(X, centres, metric=metric, p=p)  # |X| x |centres|
         xtoc = D.argmin(axis=1)  # X -> nearest centre
@@ -143,7 +143,7 @@ def randomsample(X, n):
     return X[sampleix]
 
 
-def nearestcentres(X, centres, metric="euclidean", p=2):
+def nearestcentres(X, centres, metric="euclidean", p=2, a=.1):
     """ each X -> nearest centre, any metric
             euclidean2 (~ withinss) is more sensitive to outliers,
             cityblock (manhattan, L1) less sensitive
@@ -154,7 +154,7 @@ def nearestcentres(X, centres, metric="euclidean", p=2):
         D = cdist_sparse(X, centres, metric=jensen_shannon_divergence)
     elif metric in ['kld', 'kullback-leibler']:
         centres_mean = centres.mean(axis=0)
-        D = kld_cdist_sparse(X, centres, p_B=centres_mean)
+        D = kld_cdist_sparse(X, centres, p_B=centres_mean, a=a)
     else:
         D = cdist_sparse(X, centres, metric=metric, p=p)  # |X| x |centres|
     return D.argmin(axis=1)

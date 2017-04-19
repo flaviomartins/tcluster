@@ -7,29 +7,29 @@ from scipy.spatial.distance import _copy_array_if_base_present
 from scipy.special import rel_entr
 
 
-def kld_cdist_sparse(X, Y, p_B, **kwargs):
+def kld_cdist_sparse(X, Y, p_B, a=.1, **kwargs):
     """ -> |X| x |Y| cdist array, any cdist metric
         X or Y may be sparse -- best csr
     """
     # todense row at a time, v slow if both v sparse
     sxy = 2 * issparse(X) + issparse(Y)
     if sxy == 0:
-        return kld_cdist(X, Y, p_B, **kwargs)
+        return kld_cdist(X, Y, p_B, a, **kwargs)
     d = np.empty((X.shape[0], Y.shape[0]), np.float64)
     if sxy == 2:
         for j, x in enumerate(X):
-            d[j] = kld_cdist(x.todense(), Y, p_B, **kwargs)[0]
+            d[j] = kld_cdist(x.todense(), Y, p_B, a, **kwargs)[0]
     elif sxy == 1:
         for k, y in enumerate(Y):
-            d[:, k] = kld_cdist(X, y.todense(), p_B, **kwargs)[0]
+            d[:, k] = kld_cdist(X, y.todense(), p_B, a, **kwargs)[0]
     else:
         for j, x in enumerate(X):
             for k, y in enumerate(Y):
-                d[j, k] = kld_cdist(x.todense(), y.todense(), p_B, **kwargs)[0]
+                d[j, k] = kld_cdist(x.todense(), y.todense(), p_B, a, **kwargs)[0]
     return d
 
 
-def kld_cdist(XA, XB, p_B=None, a=0.1):
+def kld_cdist(XA, XB, p_B=None, a=.1):
     # You can also call this as:
     #     Y = cdist(XA, XB, 'test_abc')
     # where 'abc' is the metric being tested.  This computes the distance
