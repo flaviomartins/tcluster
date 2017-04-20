@@ -143,7 +143,7 @@ def randomsample(X, n):
     return X[sampleix]
 
 
-def nearestcentres(X, centres, metric="euclidean", p=2, a=.1):
+def nearestcentres(X, centres, metric="euclidean", p=2, a=.1, precomputed_centres_mean=None):
     """ each X -> nearest centre, any metric
             euclidean2 (~ withinss) is more sensitive to outliers,
             cityblock (manhattan, L1) less sensitive
@@ -153,7 +153,10 @@ def nearestcentres(X, centres, metric="euclidean", p=2, a=.1):
     elif metric in ['jsd', 'jensen-shannon']:
         D = cdist_sparse(X, centres, metric=jensen_shannon_divergence)
     elif metric in ['kld', 'kullback-leibler']:
-        centres_mean = centres.mean(axis=0)
+        if precomputed_centres_mean is None:
+            centres_mean = centres.mean(axis=0)
+        else:
+            centres_mean = precomputed_centres_mean
         D = kld_cdist_sparse(X, centres, p_B=centres_mean, a=a)
     else:
         D = cdist_sparse(X, centres, metric=metric, p=p)  # |X| x |centres|
