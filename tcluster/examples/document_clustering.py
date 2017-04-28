@@ -94,6 +94,12 @@ op.add_option("--use-hashing",
 op.add_option("--n-features", type=int, default=10000,
               help="Maximum number of features (dimensions)"
                    " to extract from text.")
+op.add_option("--metric",
+              dest="metric", type="str", default="euclidean",
+              help="Specify the distance metric to use for KMeans.")
+op.add_option("--norm",
+              dest="norm", type="str", default="l2",
+              help="Use this norm to normalize document vectors.")
 op.add_option("--verbose",
               action="store_true", dest="verbose", default=False,
               help="Print progress reports inside k-means algorithm.")
@@ -139,16 +145,16 @@ if opts.use_hashing:
         hasher = HashingVectorizer(n_features=opts.n_features,
                                    stop_words='english', non_negative=True,
                                    norm=None, binary=False)
-        vectorizer = make_pipeline(hasher, TfidfTransformer())
+        vectorizer = make_pipeline(hasher, TfidfTransformer(norm=opts.norm))
     else:
         vectorizer = HashingVectorizer(n_features=opts.n_features,
                                        stop_words='english',
-                                       non_negative=False, norm='l2',
+                                       non_negative=False, norm=opts.norm,
                                        binary=False)
 else:
     vectorizer = TfidfVectorizer(max_df=0.5, max_features=opts.n_features,
                                  min_df=2, stop_words='english',
-                                 use_idf=opts.use_idf)
+                                 use_idf=opts.use_idf, norm=opts.norm)
 X = vectorizer.fit_transform(dataset.data)
 
 print("done in %fs" % (time() - t0))
@@ -180,10 +186,10 @@ if opts.n_components:
 # Do the actual clustering
 
 if opts.sample:
-    km = SampleKMeans(n_clusters=true_k, init='k-means++', n_init=1,
+    km = SampleKMeans(n_clusters=true_k, init='k-means++', n_init=1, metric=opts.metric,
                       init_size=None, verbose=opts.verbose)
 else:
-    km = KMeans(n_clusters=true_k, init='k-means++', max_iter=100, n_init=1,
+    km = KMeans(n_clusters=true_k, init='k-means++', max_iter=100, n_init=1, metric=opts.metric,
                 verbose=opts.verbose)
 
 print("Clustering sparse data with %s" % km)
