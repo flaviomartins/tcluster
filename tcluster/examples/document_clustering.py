@@ -3,7 +3,7 @@
 Clustering text documents using k-means
 =======================================
 
-This is an example showing how the scikit-learn can be used to cluster
+This is an example showing how the tcluster can be used to cluster
 documents by topics using a bag-of-words approach. This example uses
 a scipy.sparse matrix to store the features instead of standard numpy arrays.
 
@@ -24,13 +24,12 @@ Two feature extraction methods can be used in this example:
     model (the fit method does nothing). When IDF weighting is needed it can
     be added by pipelining its output to a TfidfTransformer instance.
 
-Two algorithms are demoed: ordinary k-means and its more scalable cousin
-minibatch k-means.
+Two algorithms are demoed: random start k-means and sample k-means.
 
 Additionally, latent semantic analysis can also be used to reduce dimensionality
 and discover latent patterns in the data. 
 
-It can be noted that k-means (and minibatch k-means) are very sensitive to
+It can be noted that k-means (and sample k-means) are very sensitive to
 feature scaling and that in this case the IDF weighting helps improve the
 quality of the clustering by quite a lot as measured against the "ground truth"
 provided by the class label assignments of the 20 newsgroups dataset.
@@ -64,7 +63,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import Normalizer
 from sklearn import metrics
 
-from sklearn.cluster import KMeans, MiniBatchKMeans
+from tcluster.cluster.kmeans import KMeans, SampleKMeans
 
 import logging
 from optparse import OptionParser
@@ -83,9 +82,9 @@ op = OptionParser()
 op.add_option("--lsa",
               dest="n_components", type="int",
               help="Preprocess documents with latent semantic analysis.")
-op.add_option("--no-minibatch",
-              action="store_false", dest="minibatch", default=True,
-              help="Use ordinary k-means algorithm (in batch mode).")
+op.add_option("--no-sample",
+              action="store_false", dest="sample", default=True,
+              help="Use ordinary k-means algorithm (single run).")
 op.add_option("--no-idf",
               action="store_false", dest="use_idf", default=True,
               help="Disable Inverse Document Frequency feature weighting.")
@@ -180,9 +179,9 @@ if opts.n_components:
 ###############################################################################
 # Do the actual clustering
 
-if opts.minibatch:
-    km = MiniBatchKMeans(n_clusters=true_k, init='k-means++', n_init=1,
-                         init_size=1000, batch_size=1000, verbose=opts.verbose)
+if opts.sample:
+    km = SampleKMeans(n_clusters=true_k, init='k-means++', n_init=1,
+                      init_size=None, verbose=opts.verbose)
 else:
     km = KMeans(n_clusters=true_k, init='k-means++', max_iter=100, n_init=1,
                 verbose=opts.verbose)

@@ -93,7 +93,7 @@ def kmeans(X, centres, delta=.001, maxiter=10, metric="euclidean", p=2, a=.1, ve
         print("kmeans: cluster 50 % radius", r50.astype(int))
         print("kmeans: cluster 90 % radius", r90.astype(int))
         # scale L1 / dim, L2 / sqrt(dim) ?
-    return centres, xtoc, distances
+    return np.array(centres), xtoc, distances
 
 
 def kmeanssample(X, k, nsample=0, **kwargs):
@@ -105,7 +105,7 @@ def kmeanssample(X, k, nsample=0, **kwargs):
     # v large N: sample N^1/2, N^1/2 of that
     # seed like sklearn ?
     N, dim = X.shape
-    if nsample == 0:
+    if nsample is None or nsample == 0:
         nsample = max(2 * np.sqrt(N), 10 * k)
     Xsample = randomsample(X, int(nsample))
     pass1centres = randomsample(X, int(k))
@@ -169,7 +169,7 @@ def Lqmetric(x, y=None, q=.5):
         else (np.abs(x) ** q).mean()
 
 
-class Kmeans:
+class KMeans(object):
     """ km = Kmeans( X, k= or centres=, ... )
         in: either initial centres= for kmeans
             or k= [nsample=] for kmeanssample
@@ -180,14 +180,59 @@ class Kmeans:
                 J indexes e.g. X[J], classes[J]
     """
 
-    def __init__(self, X, k=0, centres=None, nsample=0, **kwargs):
-        self.X = X
-        if centres is None:
-            self.centres, self.Xtocentre, self.distances = kmeanssample(
-                X, k=k, nsample=nsample, **kwargs)
-        else:
-            self.centres, self.Xtocentre, self.distances = kmeans(
-                X, centres, **kwargs)
+    def __init__(self, n_clusters=8, init='k-means++', n_init=10,
+                 max_iter=300, tol=1e-4, precompute_distances='auto',
+                 verbose=0, random_state=None, copy_x=True,
+                 n_jobs=1, algorithm='auto'):
+
+        self.n_clusters = n_clusters
+        self.init = init
+        self.max_iter = max_iter
+        self.tol = tol
+        self.precompute_distances = precompute_distances
+        self.n_init = n_init
+        self.verbose = verbose
+        self.random_state = random_state
+        self.copy_x = copy_x
+        self.n_jobs = n_jobs
+        self.algorithm = algorithm
+
+    def fit(self, X, y=None):
+        randomcentres = randomsample(X, self.n_clusters)
+        self.cluster_centers_, self.labels_, self.distances = kmeans(X, centres=randomcentres, delta=self.tol, maxiter=self.max_iter, verbose=2)
+        return self
+
+    def __iter__(self):
+        for jc in range(len(self.centres)):
+            yield jc, (self.Xtocentre == jc)
+
+
+class SampleKMeans(KMeans):
+    """ km = SampleKmeans( X, k= or centres=, ... )
+        in: either initial centres= for kmeans
+            or k= [nsample=] for kmeanssample
+        out: km.centres, km.Xtocentre, km.distances
+        iterator:
+            for jcentre, J in km:
+                clustercentre = centres[jcentre]
+                J indexes e.g. X[J], classes[J]
+    """
+
+    def __init__(self, n_clusters=8, init='k-means++', max_iter=100,
+                 batch_size=100, verbose=0, compute_labels=True,
+                 random_state=None, tol=1e-4, max_no_improvement=10,
+                 init_size=None, n_init=3, reassignment_ratio=0.01):
+
+        super(SampleKMeans, self).__init__(
+            n_clusters=n_clusters, init=init, max_iter=max_iter,
+            verbose=verbose, random_state=random_state, tol=tol, n_init=n_init)
+
+        self.batch_size = batch_size
+        self.init_size = init_size
+
+    def fit(self, X, y=None):
+        self.cluster_centers_, self.labels_, self.distances = kmeanssample(X, self.n_clusters, self.init_size, delta=self.tol, maxiter=self.max_iter, verbose=2)
+        return self
 
     def __iter__(self):
         for jc in range(len(self.centres)):
