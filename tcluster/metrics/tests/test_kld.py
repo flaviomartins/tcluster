@@ -17,7 +17,7 @@ def test_kld_basic():
         c = c / c.sum()
 
         assert_(kld_metric(a, b, p_B=c, a=0.5) > 0.)
-        assert_(kld_metric(a, b, p_B=c, a=0.5) >
+        assert_(kld_metric(a, b, p_B=c, a=0.5) <
                 kld_metric(a, c, p_B=c, a=0.5))
 
 
@@ -26,7 +26,7 @@ def test_kld_known_result():
     b = np.array([[0, 1, 0, 0]]).astype(np.float)
     c = a + b
     c = c / c.sum()
-    assert_(kld_metric(a, b, p_B=c, a=0.5) < np.log(2))
+    assert_(0. < kld_metric(a, b, p_B=c, a=0.5) < np.log(2))
 
 
 def test_kld_stats_entropy():
@@ -34,11 +34,12 @@ def test_kld_stats_entropy():
     a = a / a.sum()
     b = np.array([1, 1, 1, 1], float)
     b = b / b.sum()
-    m = a + b
-    expected = (entropy(a, m) + entropy(b, m)) / 2
+    c = a + b
+    c = c / c.sum()
+    expected = (entropy(a, c) + entropy(b, c)) / 2
 
-    calculated = kld_metric(a, b, p_B=m, a=0.5)
-    assert_(calculated < expected)
+    calculated = kld_metric(a, b, p_B=c, a=0.5)
+    assert_(0. < calculated < expected)
 
 
 def test_kld_cdist():

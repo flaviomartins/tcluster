@@ -21,6 +21,24 @@ def jensen_shannon_divergence(X, Y):
         Computes entropy and K-L divergence
     """
     X, Y = np.atleast_2d(X), np.atleast_2d(Y)
-    m = X + Y
-    m /= 2.
+    m = .5 * (X + Y)
     return 0.5 * np.sum(rel_entr(X, m) + rel_entr(Y, m), axis=1)
+
+
+def jensen_shannon_divergence_distance(X, Y):
+    """Compute Jensen-Shannon Divergence Distance
+    Parameters
+    ----------
+    X : array-like
+        possibly unnormalized distribution.
+    Y : array-like
+        possibly unnormalized distribution. Must be of same shape as ``X``.
+    Returns
+    -------
+    j : float
+    See Also
+    --------
+    jensen_shannon_divergence : function
+        Computes Jensen-Shannon Divergence 
+    """
+    return np.sqrt(jensen_shannon_divergence(X, Y))

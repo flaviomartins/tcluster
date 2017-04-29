@@ -4,7 +4,7 @@ from builtins import range
 import numpy as np
 from scipy.sparse import issparse
 from scipy.spatial.distance import _copy_array_if_base_present
-from scipy.special import rel_entr
+from scipy.special import xlogy
 
 
 def kld_cdist_sparse(X, Y, p_B, a=.1, **kwargs):
@@ -68,7 +68,7 @@ def kld_cdist(XA, XB, p_B=None, a=.1):
     return dm
 
 
-def kld_metric(X, Y, p_B, a=0.1):
+def kld_metric(X, Y, p_B=None, a=0.1):
     """Compute Kulkarni's Negative Kullback-Liebler metric
     Parameters
     ----------
@@ -93,6 +93,9 @@ def kld_metric(X, Y, p_B, a=0.1):
     a_p_B = a * p_B
     p_D = (1 - a) * X + a_p_B
     p_C = Y
-    m = (p_C + p_D)
-    m /= 2.
-    return 0.5 * np.sum(rel_entr(p_C, m) + rel_entr(p_D, m), axis=1)
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        agg = xlogy(p_C, p_D/a_p_B) + xlogy(p_D, p_C/a_p_B)
+        agg[~np.isfinite(agg)] = 0
+
+    return np.sum(agg, axis=1)

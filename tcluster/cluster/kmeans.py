@@ -182,7 +182,7 @@ class KMeans(object):
     def __init__(self, n_clusters=8, init='k-means++', n_init=10,
                  max_iter=300, tol=1e-4, precompute_distances='auto',
                  verbose=0, random_state=None, copy_x=True,
-                 n_jobs=1, algorithm='auto', metric='euclidean'):
+                 n_jobs=1, algorithm='auto', metric='euclidean', p=2, a=.1):
 
         self.n_clusters = n_clusters
         self.init = init
@@ -196,10 +196,14 @@ class KMeans(object):
         self.n_jobs = n_jobs
         self.algorithm = algorithm
         self.metric = metric
+        self.p = p
+        self.a = a
 
     def fit(self, X, y=None):
         randomcentres = randomsample(X, self.n_clusters)
-        self.cluster_centers_, self.labels_, self.distances = kmeans(X, centres=randomcentres, delta=self.tol, maxiter=self.max_iter, metric=self.metric, verbose=2)
+        self.cluster_centers_, self.labels_, self.distances = kmeans(X, centres=randomcentres, delta=self.tol,
+                                                                     maxiter=self.max_iter, metric=self.metric,
+                                                                     p=self.p, a=self.a, verbose=self.verbose)
         return self
 
     def __iter__(self):
@@ -220,16 +224,19 @@ class SampleKMeans(KMeans):
     def __init__(self, n_clusters=8, init='k-means++', max_iter=100,
                  batch_size=100, verbose=0, compute_labels=True,
                  random_state=None, tol=1e-4, max_no_improvement=10,
-                 init_size=None, n_init=3, metric='euclidean', reassignment_ratio=0.01):
+                 init_size=None, n_init=3, metric='euclidean', p=2, a=.1, reassignment_ratio=0.01):
 
         super(SampleKMeans, self).__init__(
             n_clusters=n_clusters, init=init, max_iter=max_iter,
-            verbose=verbose, random_state=random_state, tol=tol, n_init=n_init, metric=metric)
+            verbose=verbose, random_state=random_state, tol=tol, n_init=n_init, metric=metric, p=p, a=a)
 
         self.init_size = init_size
 
     def fit(self, X, y=None):
-        self.cluster_centers_, self.labels_, self.distances = kmeanssample(X, self.n_clusters, self.init_size, delta=self.tol, maxiter=self.max_iter, metric=self.metric, verbose=2)
+        self.cluster_centers_, self.labels_, self.distances = kmeanssample(X, self.n_clusters, self.init_size,
+                                                                           delta=self.tol, maxiter=self.max_iter,
+                                                                           metric=self.metric, p=self.p, a=self.a,
+                                                                           verbose=self.verbose)
         return self
 
     def __iter__(self):
