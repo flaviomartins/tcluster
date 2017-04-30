@@ -25,8 +25,8 @@ def jensen_shannon_divergence(X, Y):
     return 0.5 * np.sum(rel_entr(X, m) + rel_entr(Y, m), axis=1)
 
 
-def jensen_shannon_divergence_distance(X, Y):
-    """Compute Jensen-Shannon Divergence Distance
+def jensen_shannon_distance(X, Y):
+    """Compute Jensen-Shannon Distance
     Parameters
     ----------
     X : array-like
