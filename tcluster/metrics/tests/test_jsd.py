@@ -23,8 +23,8 @@ def test_jsd_basic():
 
 
 def test_jsd_known_result():
-    a = np.array([[1, 0, 0, 0]]).astype(np.float)
-    b = np.array([[0, 1, 0, 0]]).astype(np.float)
+    a = np.array([1, 0, 0, 0]).astype(np.float)
+    b = np.array([0, 1, 0, 0]).astype(np.float)
     assert_almost_equal(jensen_shannon_divergence(a, b), np.log(2))
 
 

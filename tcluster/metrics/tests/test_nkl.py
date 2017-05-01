@@ -1,9 +1,9 @@
 from __future__ import division
 
 import numpy as np
-from numpy.testing import assert_
+from numpy.testing import assert_, assert_almost_equal
 
-from tcluster.metrics.nkl import nkl_metric
+from tcluster.metrics.nkl import nkl_metric, np_nkl_metric
 
 
 def test_nkl_basic():
@@ -26,3 +26,16 @@ def test_nkl_known_result():
     c = a + b
     c = c / c.sum()
     assert_(-np.log(2) < nkl_metric(a, b, p_B=c, a=0.5) < 0.)
+
+
+def test_nkl_special_xlogy():
+    a = np.array([1, 0, 0, 0], float)
+    a = a / a.sum()
+    b = np.array([1, 1, 1, 1], float)
+    b = b / b.sum()
+    c = a + b
+    c = c / c.sum()
+
+    expected = np_nkl_metric(a, b, p_B=c, a=0.5)
+    calculated = nkl_metric(a, b, p_B=c, a=0.5)
+    assert_almost_equal(calculated, expected)
