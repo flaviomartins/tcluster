@@ -12,7 +12,7 @@ import numpy as np
 # http://docs.scipy.org/doc/scipy/reference/spatial.html
 from scipy.sparse import issparse  # $scipy/sparse/csr.py
 from scipy.spatial.distance import cdist  # $scipy/spatial/distance.py
-from sklearn.metrics.pairwise import cosine_distances
+from sklearn.metrics.pairwise import cosine_distances, euclidean_distances
 
 from tcluster.metrics.jsd import jensen_shannon_divergence
 from tcluster.metrics.kld import kld_cdist_sparse
@@ -59,6 +59,8 @@ def kmeans(X, centres, delta=.001, maxiter=10, metric="euclidean", p=2, a=.1, ve
     allx = np.arange(N)
     prevdist = 0
     for jiter in range(1, maxiter + 1):
+        if metric in ['euclidean', 'euc']:
+            D = euclidean_distances(X, centres)
         if metric in ['cosine', 'cos']:
             D = cosine_distances(X, centres)
         elif metric in ['jsd', 'jensen-shannon']:
