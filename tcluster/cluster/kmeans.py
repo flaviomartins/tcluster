@@ -11,11 +11,10 @@ import numpy as np
 
 # http://docs.scipy.org/doc/scipy/reference/spatial.html
 from scipy.sparse import issparse  # $scipy/sparse/csr.py
-from scipy.spatial.distance import cdist  # $scipy/spatial/distance.py
 from sklearn.metrics.pairwise import cosine_distances, euclidean_distances, pairwise_distances
 
 from tcluster.metrics.jsd import jensen_shannon_divergence
-from tcluster.metrics.kld import kld_cdist_sparse
+from tcluster.metrics.kld import kld_metric
 
 __date__ = "2011-11-17 Nov denis"
 
@@ -64,12 +63,12 @@ def kmeans(X, centres, delta=.001, maxiter=10, metric="euclidean", p=2, a=.1, ve
         if metric in ['cosine', 'cos']:
             D = cosine_distances(X, centres)
         elif metric in ['jsd', 'jensen-shannon']:
-            D = cdist_sparse(X, centres, metric=jensen_shannon_divergence)
+            D = pairwise_distances_sparse(X, centres, metric=jensen_shannon_divergence)
         elif metric in ['kld', 'kullback-leibler']:
             centres_mean = centres.mean(axis=0)
-            D = kld_cdist_sparse(X, centres, p_B=centres_mean, a=a)
+            D = pairwise_distances_sparse(X, centres, p_B=centres_mean, a=a, metric=kld_metric)
         else:
-            D = cdist_sparse(X, centres, metric=metric, p=p)  # |X| x |centres|
+            D = pairwise_distances_sparse(X, centres, metric=metric, p=p)  # |X| x |centres|
         xtoc = D.argmin(axis=1)  # X -> nearest centre
         distances = D[allx, xtoc]
         avdist = distances.mean()  # median ?
@@ -115,8 +114,8 @@ def kmeanssample(X, k, nsample=0, **kwargs):
     return kmeans(X, samplecentres, **kwargs)
 
 
-def cdist_sparse(X, Y, **kwargs):
-    """ -> |X| x |Y| cdist array, any cdist metric
+def pairwise_distances_sparse(X, Y, **kwargs):
+    """ -> |X| x |Y| distances array, any pairwise_distances metric
         X or Y may be sparse -- best csr
     """
     # todense row at a time, v slow if both v sparse
@@ -131,7 +130,7 @@ def cdist_sparse(X, Y, **kwargs):
         d = np.empty((X.shape[0], Y.shape[0]), np.float64)
         for j, x in enumerate(X):
             for k, y in enumerate(Y):
-                d[j, k] = cdist(x.todense(), y.todense(), **kwargs)[0]
+                d[j, k] = pairwise_distances(x.todense(), y.todense(), **kwargs)[0]
     return d
 
 
@@ -151,15 +150,15 @@ def nearestcentres(X, centres, metric="euclidean", p=2, a=.1, precomputed_centre
     if metric in ['cosine', 'cos']:
         D = cosine_distances(X, centres)
     elif metric in ['jsd', 'jensen-shannon']:
-        D = cdist_sparse(X, centres, metric=jensen_shannon_divergence)
+        D = pairwise_distances_sparse(X, centres, metric=jensen_shannon_divergence)
     elif metric in ['kld', 'kullback-leibler']:
         if precomputed_centres_mean is None:
             centres_mean = centres.mean(axis=0)
         else:
             centres_mean = precomputed_centres_mean
-        D = kld_cdist_sparse(X, centres, p_B=centres_mean, a=a)
+        D = pairwise_distances_sparse(X, centres, p_B=centres_mean, a=a, metric=kld_metric)
     else:
-        D = cdist_sparse(X, centres, metric=metric, p=p)  # |X| x |centres|
+        D = pairwise_distances_sparse(X, centres, metric=metric, p=p)  # |X| x |centres|
     return D.argmin(axis=1)
 
 
