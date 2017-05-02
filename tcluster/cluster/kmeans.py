@@ -12,7 +12,7 @@ import numpy as np
 # http://docs.scipy.org/doc/scipy/reference/spatial.html
 from scipy.sparse import issparse  # $scipy/sparse/csr.py
 from scipy.spatial.distance import cdist  # $scipy/spatial/distance.py
-from sklearn.metrics.pairwise import cosine_distances, euclidean_distances
+from sklearn.metrics.pairwise import cosine_distances, euclidean_distances, pairwise_distances
 
 from tcluster.metrics.jsd import jensen_shannon_divergence
 from tcluster.metrics.kld import kld_cdist_sparse
@@ -122,15 +122,13 @@ def cdist_sparse(X, Y, **kwargs):
     # todense row at a time, v slow if both v sparse
     sxy = 2 * issparse(X) + issparse(Y)
     if sxy == 0:
-        return cdist(X, Y, **kwargs)
-    d = np.empty((X.shape[0], Y.shape[0]), np.float64)
+        return pairwise_distances(X, Y, n_jobs=-1, **kwargs)
     if sxy == 2:
-        for j, x in enumerate(X):
-            d[j] = cdist(x.todense(), Y, **kwargs)[0]
+        return pairwise_distances(X.todense(), Y, n_jobs=-1, **kwargs)
     elif sxy == 1:
-        for k, y in enumerate(Y):
-            d[:, k] = cdist(X, y.todense(), **kwargs)[0]
+        return pairwise_distances(X, Y.todense(), n_jobs=-1, **kwargs)
     else:
+        d = np.empty((X.shape[0], Y.shape[0]), np.float64)
         for j, x in enumerate(X):
             for k, y in enumerate(Y):
                 d[j, k] = cdist(x.todense(), y.todense(), **kwargs)[0]
