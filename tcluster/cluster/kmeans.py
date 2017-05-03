@@ -60,7 +60,7 @@ def kmeans(X, centres, delta=.001, maxiter=10, metric="euclidean", p=2, a=.1, ve
     for jiter in range(1, maxiter + 1):
         if metric in ['euclidean', 'euc']:
             D = euclidean_distances(X, centres)
-        if metric in ['cosine', 'cos']:
+        elif metric in ['cosine', 'cos']:
             D = cosine_distances(X, centres)
         elif metric in ['jsd', 'jensen-shannon']:
             D = pairwise_distances_sparse(X, centres, metric=jensen_shannon_divergence)
