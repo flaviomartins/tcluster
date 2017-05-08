@@ -64,6 +64,7 @@ from sklearn.preprocessing import Normalizer
 from sklearn import metrics
 
 from tcluster.cluster.kmeans import KMeans, SampleKMeans
+from tcluster.metrics.nkl import nkl_transform
 
 import logging
 from optparse import OptionParser
@@ -97,6 +98,8 @@ op.add_option("--n-features", type=int, default=10000,
 op.add_option("--metric",
               dest="metric", type="str", default="euclidean",
               help="Specify the distance metric to use for KMeans.")
+op.add_option("--a", type=float, default=.7,
+              help="JM smoothing (NKL parameter).")
 op.add_option("--norm",
               dest="norm", type="str", default="l2",
               help="Use this norm to normalize document vectors.")
@@ -187,10 +190,10 @@ if opts.n_components:
 # Do the actual clustering
 
 if opts.sample:
-    km = SampleKMeans(n_clusters=true_k, init='k-means++', max_iter=50, n_init=1, metric=opts.metric, a=.7,
+    km = SampleKMeans(n_clusters=true_k, init='k-means++', max_iter=50, n_init=1, metric=opts.metric, a=opts.a,
                       init_size=None, verbose=2 if opts.verbose else 0)
 else:
-    km = KMeans(n_clusters=true_k, init='k-means++', max_iter=50, n_init=1, metric=opts.metric, a=.7,
+    km = KMeans(n_clusters=true_k, init='k-means++', max_iter=50, n_init=1, metric=opts.metric, a=opts.a,
                 verbose=2 if opts.verbose else 0)
 
 print("Clustering sparse data with %s" % km)
@@ -213,11 +216,15 @@ print()
 if not opts.use_hashing:
     print("Top terms per cluster:")
 
+    cluster_centers_ = km.cluster_centers_
+    if opts.metric in ['nkl', 'negative-kullback-leibler']:
+        cluster_centers_ = nkl_transform(cluster_centers_, a=opts.a)
+
     if opts.n_components:
-        original_space_centroids = svd.inverse_transform(km.cluster_centers_)
+        original_space_centroids = svd.inverse_transform(cluster_centers_)
         order_centroids = original_space_centroids.argsort()[:, ::-1]
     else:
-        order_centroids = km.cluster_centers_.argsort()[:, ::-1]
+        order_centroids = cluster_centers_.argsort()[:, ::-1]
 
     terms = vectorizer.get_feature_names()
     for i in range(true_k):
