@@ -128,6 +128,7 @@ print("Loading 20 newsgroups dataset for categories:")
 print(categories)
 
 dataset = fetch_20newsgroups(subset='all', categories=categories,
+                             remove=('headers', 'footers', 'quotes'),
                              shuffle=True, random_state=42)
 
 print("%d documents" % len(dataset.data))
@@ -186,10 +187,10 @@ if opts.n_components:
 # Do the actual clustering
 
 if opts.sample:
-    km = SampleKMeans(n_clusters=true_k, init='k-means++', max_iter=50, n_init=1, metric=opts.metric, a=.4,
+    km = SampleKMeans(n_clusters=true_k, init='k-means++', max_iter=50, n_init=1, metric=opts.metric, a=.7,
                       init_size=None, verbose=2 if opts.verbose else 0)
 else:
-    km = KMeans(n_clusters=true_k, init='k-means++', max_iter=50, n_init=1, metric=opts.metric, a=.4,
+    km = KMeans(n_clusters=true_k, init='k-means++', max_iter=50, n_init=1, metric=opts.metric, a=.7,
                 verbose=2 if opts.verbose else 0)
 
 print("Clustering sparse data with %s" % km)
