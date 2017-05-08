@@ -29,6 +29,6 @@ def test_kmeans_jsd():
                                        delta=kmdelta, maxiter=kmiter, metric="jsd", verbose=2)
 
 
-def test_kmeans_kld():
+def test_kmeans_nkl():
     centres, xtoc, dist = kmeanssample(X, ncluster, nsample=kmsample,
-                                       delta=kmdelta, maxiter=kmiter, metric="kld", verbose=2)
+                                       delta=kmdelta, maxiter=kmiter, metric="nkl", verbose=2)

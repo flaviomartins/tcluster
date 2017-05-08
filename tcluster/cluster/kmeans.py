@@ -151,7 +151,7 @@ def nearestcentres(X, centres, metric="euclidean", p=2, a=.1, precomputed_centre
         D = cosine_distances(X, centres)
     elif metric in ['jsd', 'jensen-shannon']:
         D = pairwise_distances_sparse(X, centres, metric=jensen_shannon_divergence)
-    elif metric in ['kld', 'kullback-leibler']:
+    elif metric in ['nkl', 'negative-kullback-leibler']:
         if precomputed_centres_mean is None:
             centres_mean = centres.mean(axis=0)
         else:
