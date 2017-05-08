@@ -31,7 +31,7 @@ def nkl_metric(X, Y, p_B=None, a=0.1):
     p_C = Y
 
     with np.errstate(divide='ignore', invalid='ignore'):
-        agg = xlogy(p_C, p_D/a_p_B) + xlogy(p_D, p_C/a_p_B)
+        agg = xlogy(p_C, a_p_B/p_D) + xlogy(p_D, a_p_B/p_C)
         agg[~np.isfinite(agg)] = 0
 
     return np.sum(agg, axis=1)
