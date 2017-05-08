@@ -1,8 +1,7 @@
 from __future__ import division
 
 import numpy as np
-from numpy.testing import assert_, assert_almost_equal, assert_array_almost_equal
-from scipy.spatial.distance import cdist
+from numpy.testing import assert_, assert_almost_equal
 from scipy.stats import entropy
 
 from tcluster.metrics.jsd import jensen_shannon_divergence
@@ -39,11 +38,3 @@ def test_jsd_stats_entropy():
 
     calculated = jensen_shannon_divergence(a, b)
     assert_almost_equal(calculated, expected)
-
-
-def test_jsd_cdist():
-    a = np.random.random((1, 12))
-    b = np.random.random((10, 12))
-    direct = jensen_shannon_divergence(a, b)
-    indirect = cdist(a, b, metric=jensen_shannon_divergence)[0]
-    assert_array_almost_equal(direct, indirect)
