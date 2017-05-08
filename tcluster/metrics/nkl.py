@@ -64,3 +64,10 @@ def np_nkl_metric(X, Y, p_B=None, a=0.1):
         agg[~np.isfinite(agg)] = 0
 
     return np.sum(agg, axis=1)
+
+
+def nkl_transform(centres, a=0.1):
+    with np.errstate(divide='ignore', invalid='ignore'):
+        cluster_centers_ = a * centres.mean(axis=0) / centres
+        cluster_centers_[~np.isfinite(cluster_centers_)] = 0
+    return cluster_centers_
