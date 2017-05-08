@@ -1,10 +1,10 @@
 from __future__ import division
 
 import numpy as np
-from numpy.testing import assert_, assert_array_almost_equal
+from numpy.testing import assert_
 from scipy.stats import entropy
 
-from tcluster.metrics.kld import kld_metric, kld_cdist
+from tcluster.metrics.nkl import nkl_metric
 
 
 def test_kld_basic():
@@ -16,9 +16,9 @@ def test_kld_basic():
         c = a + b
         c = c / c.sum()
 
-        assert_(kld_metric(a, b, p_B=c, a=0.5) > 0.)
-        assert_(kld_metric(a, b, p_B=c, a=0.5) <
-                kld_metric(a, c, p_B=c, a=0.5))
+        assert_(nkl_metric(a, b, p_B=c, a=0.5) > 0.)
+        assert_(nkl_metric(a, b, p_B=c, a=0.5) <
+                nkl_metric(a, c, p_B=c, a=0.5))
 
 
 def test_kld_known_result():
@@ -26,7 +26,7 @@ def test_kld_known_result():
     b = np.array([[0, 1, 0, 0]]).astype(np.float)
     c = a + b
     c = c / c.sum()
-    assert_(0. < kld_metric(a, b, p_B=c, a=0.5) < np.log(2))
+    assert_(0. < nkl_metric(a, b, p_B=c, a=0.5) < np.log(2))
 
 
 def test_kld_stats_entropy():
@@ -38,15 +38,5 @@ def test_kld_stats_entropy():
     c = c / c.sum()
     expected = (entropy(a, c) + entropy(b, c)) / 2
 
-    calculated = kld_metric(a, b, p_B=c, a=0.5)
+    calculated = nkl_metric(a, b, p_B=c, a=0.5)
     assert_(0. < calculated < expected)
-
-
-def test_kld_cdist():
-    a = np.random.random((1, 12))
-    b = np.random.random((10, 12))
-    c = b.sum()
-    c = c / c.sum()
-    direct = kld_metric(a, b, p_B=c, a=0.5)
-    indirect = kld_cdist(a, b, p_B=c, a=0.5)[0]
-    assert_array_almost_equal(direct, indirect)

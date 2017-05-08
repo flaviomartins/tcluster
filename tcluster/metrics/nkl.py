@@ -4,8 +4,8 @@ import numpy as np
 from scipy.special import xlogy
 
 
-def kld_metric(X, Y, p_B=None, a=0.1):
-    """Compute Kulkarni's Negative Kullback-Liebler metric
+def nkl_metric(X, Y, p_B=None, a=0.1):
+    """Compute Negative Kullback-Liebler distance metric
     Parameters
     ----------
     X : array-like

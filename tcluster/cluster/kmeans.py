@@ -14,7 +14,7 @@ from scipy.sparse import issparse  # $scipy/sparse/csr.py
 from sklearn.metrics.pairwise import cosine_distances, euclidean_distances, pairwise_distances
 
 from tcluster.metrics.jsd import jensen_shannon_divergence
-from tcluster.metrics.kld import kld_metric
+from tcluster.metrics.nkl import nkl_metric
 
 __date__ = "2011-11-17 Nov denis"
 
@@ -64,9 +64,9 @@ def kmeans(X, centres, delta=.001, maxiter=10, metric="euclidean", p=2, a=.1, ve
             D = cosine_distances(X, centres)
         elif metric in ['jsd', 'jensen-shannon']:
             D = pairwise_distances_sparse(X, centres, metric=jensen_shannon_divergence)
-        elif metric in ['kld', 'kullback-leibler']:
+        elif metric in ['nkl', 'negative-kullback-leibler']:
             centres_mean = centres.mean(axis=0)
-            D = pairwise_distances_sparse(X, centres, p_B=centres_mean, a=a, metric=kld_metric)
+            D = pairwise_distances_sparse(X, centres, p_B=centres_mean, a=a, metric=nkl_metric)
         else:
             D = pairwise_distances_sparse(X, centres, metric=metric, p=p)  # |X| x |centres|
         xtoc = D.argmin(axis=1)  # X -> nearest centre
@@ -156,7 +156,7 @@ def nearestcentres(X, centres, metric="euclidean", p=2, a=.1, precomputed_centre
             centres_mean = centres.mean(axis=0)
         else:
             centres_mean = precomputed_centres_mean
-        D = pairwise_distances_sparse(X, centres, p_B=centres_mean, a=a, metric=kld_metric)
+        D = pairwise_distances_sparse(X, centres, p_B=centres_mean, a=a, metric=nkl_metric)
     else:
         D = pairwise_distances_sparse(X, centres, metric=metric, p=p)  # |X| x |centres|
     return D.argmin(axis=1)
