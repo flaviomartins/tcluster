@@ -92,6 +92,9 @@ op.add_option("--no-idf",
 op.add_option("--use-hashing",
               action="store_true", default=False,
               help="Use a hashing feature vectorizer")
+op.add_option("--max-iter", type=int, default=50,
+              help="Maximum number of iterations"
+                   " to extract from text.")
 op.add_option("--n-features", type=int, default=10000,
               help="Maximum number of features (dimensions)"
                    " to extract from text.")
@@ -190,10 +193,10 @@ if opts.n_components:
 # Do the actual clustering
 
 if opts.sample:
-    km = SampleKMeans(n_clusters=true_k, init='k-means++', max_iter=50, n_init=1, metric=opts.metric, a=opts.a,
+    km = SampleKMeans(n_clusters=true_k, init='k-means++', max_iter=opts.max_iter, n_init=1, metric=opts.metric, a=opts.a,
                       init_size=None, verbose=2 if opts.verbose else 0)
 else:
-    km = KMeans(n_clusters=true_k, init='k-means++', max_iter=50, n_init=1, metric=opts.metric, a=opts.a,
+    km = KMeans(n_clusters=true_k, init='k-means++', max_iter=opts.max_iter, n_init=1, metric=opts.metric, a=opts.a,
                 verbose=2 if opts.verbose else 0)
 
 print("Clustering sparse data with %s" % km)
