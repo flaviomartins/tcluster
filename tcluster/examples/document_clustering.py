@@ -93,8 +93,7 @@ op.add_option("--use-hashing",
               action="store_true", default=False,
               help="Use a hashing feature vectorizer")
 op.add_option("--max-iter", type=int, default=50,
-              help="Maximum number of iterations"
-                   " to extract from text.")
+              help="Maximum number of iterations")
 op.add_option("--n-features", type=int, default=10000,
               help="Maximum number of features (dimensions)"
                    " to extract from text.")
