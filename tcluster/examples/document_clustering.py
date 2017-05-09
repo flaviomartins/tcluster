@@ -54,6 +54,7 @@ necessary to get a good convergence.
 
 from __future__ import print_function
 
+from nltk import sent_tokenize
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -105,6 +106,9 @@ op.add_option("--a", type=float, default=.7,
 op.add_option("--norm",
               dest="norm", type="str", default="l2",
               help="Use this norm to normalize document vectors.")
+op.add_option("--short",
+              action="store_true", dest="short", default=False,
+              help="Use short sentences (short text simulation).")
 op.add_option("--verbose",
               action="store_true", dest="verbose", default=False,
               help="Print progress reports inside k-means algorithm.")
@@ -142,6 +146,22 @@ print()
 
 labels = dataset.target
 true_k = np.unique(labels).shape[0]
+
+if opts.short:
+    print("Partitioning 20 newsgroups dataset into sentences:")
+    data = []
+    labels = []
+    for text, label in zip(dataset.data, dataset.target):
+        for line in sent_tokenize(text):
+            data.append(line)
+            labels.append(label)
+
+    dataset.data = data
+    labels = np.array(labels)
+
+    print("%d sentences" % len(dataset.data))
+    print("%d categories" % len(dataset.target_names))
+    print()
 
 print("Extracting features from the training dataset using a sparse vectorizer")
 t0 = time()
