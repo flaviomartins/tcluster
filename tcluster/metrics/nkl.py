@@ -1,7 +1,7 @@
 from __future__ import division
 
 import numpy as np
-from scipy.special import xlogy
+from scipy.special import xlogy, rel_entr
 
 import pyximport
 pyximport.install(setup_args={"include_dirs": np.get_include()},
@@ -66,8 +66,5 @@ def np_nkl_metric(X, Y, p_B=None, a=0.1):
     return np.sum(agg, axis=1)
 
 
-def nkl_transform(centres, a=0.1):
-    with np.errstate(divide='ignore', invalid='ignore'):
-        cluster_centers_ = a * centres.mean(axis=0) / centres
-        cluster_centers_[~np.isfinite(cluster_centers_)] = 0
-    return cluster_centers_
+def nkl_transform(X, a=0.1):
+    return rel_entr(X, a * X.mean(axis=0))
