@@ -122,12 +122,14 @@ def pairwise_distances_sparse(X, Y, **kwargs):
     sxy = 2 * issparse(X) + issparse(Y)
     if sxy == 0:
         return pairwise_distances(X, Y, n_jobs=-1, **kwargs)
+    d = np.empty((X.shape[0], Y.shape[0]), np.float64)
     if sxy == 2:
-        return pairwise_distances(X.todense(), Y, n_jobs=-1, **kwargs)
+        for j, x in enumerate(X):
+            d[j] = pairwise_distances(x.todense(), Y, **kwargs)[0]
     elif sxy == 1:
-        return pairwise_distances(X, Y.todense(), n_jobs=-1, **kwargs)
+        for k, y in enumerate(Y):
+            d[:, k] = pairwise_distances(X, y.todense(), **kwargs)[0]
     else:
-        d = np.empty((X.shape[0], Y.shape[0]), np.float64)
         for j, x in enumerate(X):
             for k, y in enumerate(Y):
                 d[j, k] = pairwise_distances(x.todense(), y.todense(), **kwargs)[0]
