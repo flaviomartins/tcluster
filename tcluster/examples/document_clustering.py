@@ -66,6 +66,7 @@ from sklearn import metrics
 
 from tcluster.cluster.kmeans import KMeans, SampleKMeans
 from tcluster.metrics.nkl import nkl_transform
+from tcluster.metrics.purity import purity_score
 
 import logging
 from optparse import OptionParser
@@ -224,11 +225,13 @@ km.fit(X)
 print("done in %0.3fs" % (time() - t0))
 print()
 
-print("Homogeneity: %0.3f" % metrics.homogeneity_score(labels, km.labels_))
-print("Completeness: %0.3f" % metrics.completeness_score(labels, km.labels_))
-print("V-measure: %0.3f" % metrics.v_measure_score(labels, km.labels_))
-print("Adjusted Rand-Index: %.3f"
-      % metrics.adjusted_rand_score(labels, km.labels_))
+print("Purity: %0.3f" % purity_score(labels, km.labels_))
+homogeneity, completeness, v_measure_score = metrics.homogeneity_completeness_v_measure(labels, km.labels_)
+print("Homogeneity: %0.3f" % homogeneity)
+print("Completeness: %0.3f" % completeness)
+print("NMI: %0.3f" % v_measure_score)
+print("ARI: %0.3f" % metrics.adjusted_rand_score(labels, km.labels_))
+print("AMI: %0.3f" % metrics.adjusted_mutual_info_score(labels, km.labels_))
 print("Silhouette Coefficient: %0.3f"
       % metrics.silhouette_score(X, km.labels_, sample_size=1000))
 
