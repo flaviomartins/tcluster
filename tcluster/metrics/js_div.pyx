@@ -13,7 +13,7 @@ cdef inline double kl(double x, double y) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.nonecheck(False)
-def js_div(np.ndarray[np.double_t, ndim=1] v1, np.ndarray[np.double_t, ndim=1] v2):
+cpdef double js_div(np.ndarray[np.double_t, ndim=1] v1, np.ndarray[np.double_t, ndim=1] v2):
     cdef int d, dim
     cdef double xd, yd, md, agg
     dim = v1.shape[0]

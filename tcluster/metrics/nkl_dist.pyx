@@ -13,14 +13,14 @@ cdef inline double kl(double x, double y, double z) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.nonecheck(False)
-def nkl_dist(np.ndarray[np.double_t, ndim=1] v1, np.ndarray[np.double_t, ndim=1] v2,
+cpdef double nkl_dist(np.ndarray[np.double_t, ndim=1] v1, np.ndarray[np.double_t, ndim=1] v2,
             np.ndarray[np.double_t, ndim=1] b, double a):
     cdef int d, dim
     cdef double xd, yd, bd, a_bd, pd, pc, agg
     dim = v1.shape[0]
     agg = 0.
     for d in prange(dim, nogil=True):
-        xd, yd, bd = v1[d], v2[d],  b[d]
+        xd, yd, bd = v1[d], v2[d], b[d]
         a_bd = a * bd
         pd = (1. - a) * xd + a_bd
         pc = yd
