@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 # author: Flavio Martins
 # creation date: 1/5/2017
-from __future__ import division
-import numpy as np
 cimport numpy as np
 import cython
-cimport cython
 from cython.parallel cimport prange
 from libc.math cimport log
 
-cdef double kl(double x, double y, double z) nogil:
+@cython.cdivision(True)
+cdef inline double kl(double x, double y, double z) nogil:
     return x * log(y / z)
 
 @cython.boundscheck(False)
@@ -19,7 +17,7 @@ def nkl_dist(np.ndarray[np.double_t, ndim=1] v1, np.ndarray[np.double_t, ndim=1]
             np.ndarray[np.double_t, ndim=1] b, double a):
     cdef int d, dim
     cdef double xd, yd, bd, a_bd, pd, pc, agg
-    dim = v1.size
+    dim = v1.shape[0]
     agg = 0.
     for d in prange(dim, nogil=True):
         xd, yd, bd = v1[d], v2[d],  b[d]

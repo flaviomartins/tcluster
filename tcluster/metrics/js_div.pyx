@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 # author: Flavio Martins
 # creation date: 1/5/2017
-from __future__ import division
-import numpy as np
 cimport numpy as np
 import cython
-cimport cython
 from cython.parallel cimport prange
 from libc.math cimport log
 
-cdef double kl(double x, double y) nogil:
+@cython.cdivision(True)
+cdef inline double kl(double x, double y) nogil:
     return x * log(x / y)
 
 @cython.boundscheck(False)
@@ -18,7 +16,7 @@ cdef double kl(double x, double y) nogil:
 def js_div(np.ndarray[np.double_t, ndim=1] v1, np.ndarray[np.double_t, ndim=1] v2):
     cdef int d, dim
     cdef double xd, yd, md, agg
-    dim = v1.size
+    dim = v1.shape[0]
     agg = 0.
     for d in prange(dim, nogil=True):
         xd, yd = v1[d], v2[d]
