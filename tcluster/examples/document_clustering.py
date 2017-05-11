@@ -213,10 +213,10 @@ if opts.n_components:
 # Do the actual clustering
 
 if opts.sample:
-    km = SampleKMeans(n_clusters=true_k, init='k-means++', max_iter=opts.max_iter, n_init=1, metric=opts.metric, a=opts.a,
+    km = SampleKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=1, metric=opts.metric, a=opts.a,
                       init_size=None, verbose=2 if opts.verbose else 0)
 else:
-    km = KMeans(n_clusters=true_k, init='k-means++', max_iter=opts.max_iter, n_init=1, metric=opts.metric, a=opts.a,
+    km = KMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=1, metric=opts.metric, a=opts.a,
                 verbose=2 if opts.verbose else 0)
 
 print("Clustering sparse data with %s" % km)

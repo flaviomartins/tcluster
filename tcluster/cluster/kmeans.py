@@ -180,7 +180,7 @@ class KMeans(object):
                 J indexes e.g. X[J], classes[J]
     """
 
-    def __init__(self, n_clusters=8, init='k-means++', n_init=10,
+    def __init__(self, n_clusters=8, init='random', n_init=10,
                  max_iter=300, tol=1e-4, precompute_distances='auto',
                  verbose=0, random_state=None, copy_x=True,
                  n_jobs=1, algorithm='auto', metric='euclidean', p=2, a=.1):
@@ -222,7 +222,7 @@ class SampleKMeans(KMeans):
                 J indexes e.g. X[J], classes[J]
     """
 
-    def __init__(self, n_clusters=8, init='k-means++', max_iter=100,
+    def __init__(self, n_clusters=8, init='random', max_iter=100,
                  batch_size=100, verbose=0, compute_labels=True,
                  random_state=None, tol=1e-4, max_no_improvement=10,
                  init_size=None, n_init=3, metric='euclidean', p=2, a=.1, reassignment_ratio=0.01):
