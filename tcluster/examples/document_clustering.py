@@ -215,7 +215,7 @@ if opts.n_components:
 if opts.sample:
     km = SampleKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=10,
                       metric=opts.metric, metric_kwargs={'a': opts.a},
-                      init_size=None, verbose=opts.verbose)
+                      init_size=.1 * X.shape[0], verbose=opts.verbose)
 else:
     km = KMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=10,
                 metric=opts.metric, metric_kwargs={'a': opts.a},
