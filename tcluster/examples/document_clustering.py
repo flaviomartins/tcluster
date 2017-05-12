@@ -64,7 +64,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import Normalizer
 from sklearn import metrics
 
-from tcluster.cluster.kmeans import KMeans, SampleKMeans
+from tcluster.cluster.kmeans import KMeans, SampleKMeans, MiniBatchKMeans
 from tcluster.metrics.nkl import nkl_transform
 from tcluster.metrics.purity import purity_score
 
@@ -85,6 +85,8 @@ op = OptionParser()
 op.add_option("--lsa",
               dest="n_components", type="int",
               help="Preprocess documents with latent semantic analysis.")
+op.add_option("--batch", type=float, default=.1,
+              help="Batch size for k-means minibatch algorithm.")
 op.add_option("--sample", type=float, default=.1,
               help="Number of samples for k-means algorithm training phase.")
 op.add_option("--no-idf",
@@ -213,9 +215,15 @@ if opts.n_components:
 ###############################################################################
 # Do the actual clustering
 
-if opts.sample > 0:
+if opts.batch > 0:
+    batch_size = int(opts.batch)
+    km = MiniBatchKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=opts.n_init,
+                         metric=opts.metric, metric_kwargs={'a': opts.a},
+                         batch_size=batch_size, verbose=opts.verbose)
+
+elif opts.sample > 0:
     if opts.sample < 1:
-        init_size = opts.sample * X.shape[0]
+        init_size = int(opts.sample * X.shape[0])
     else:
         init_size = max(opts.sample, 10 * true_k)
     km = SampleKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=opts.n_init,
