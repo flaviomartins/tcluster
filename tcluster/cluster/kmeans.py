@@ -538,9 +538,8 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
     return best_labels, best_inertia, best_centers, i + 1
 
 
-def _labels_inertia(X, x_squared_norms, centers,
-                    precompute_distances=True, distances=None,
-                    metric='euclidean', metric_kwargs=None):
+def _labels_inertia_precompute_dense(X, x_squared_norms, centers, distances,
+                                         metric='euclidean', metric_kwargs=None):
     """Compute labels and inertia using a full distance matrix.
 
     This will overwrite the 'distances' array in-place.
@@ -605,6 +604,53 @@ def _labels_inertia(X, x_squared_norms, centers,
         distances[:] = mindist
     inertia = mindist.sum()
     return labels, inertia
+
+
+def _labels_inertia(X, x_squared_norms, centers,
+                    precompute_distances=True, distances=None,
+                    metric='euclidean', metric_kwargs=None):
+    """E step of the K-means EM algorithm.
+
+    Compute the labels and the inertia of the given samples and centers.
+    This will compute the distances in-place.
+
+    Parameters
+    ----------
+    X: float64 array-like or CSR sparse matrix, shape (n_samples, n_features)
+        The input samples to assign to the labels.
+
+    x_squared_norms: array, shape (n_samples,)
+        Precomputed squared euclidean norm of each data point, to speed up
+        computations.
+
+    centers: float array, shape (k, n_features)
+        The cluster centers.
+
+    precompute_distances : boolean, default: True
+        Precompute distances (faster but takes more memory).
+
+    distances: float array, shape (n_samples,)
+        Pre-allocated array to be filled in with each sample's distance
+        to the closest center.
+
+    Returns
+    -------
+    labels: int array of shape(n)
+        The resulting assignment
+
+    inertia : float
+        Sum of distances of samples to their closest cluster center.
+    """
+    n_samples = X.shape[0]
+    # set the default value of centers to -1 to be able to detect any anomaly
+    # easily
+    labels = -np.ones(n_samples, np.int32)
+    if distances is None:
+        distances = np.zeros(shape=(0,), dtype=X.dtype)
+    # distances will be changed in-place
+    return _labels_inertia_precompute_dense(X, x_squared_norms,
+                                            centers, distances,
+                                            metric, metric_kwargs)
 
 
 def _init_centroids(X, k, init, random_state=None, x_squared_norms=None,
@@ -969,14 +1015,6 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
 
 
 class SampleKMeans(KMeans):
-    """ km = SampleKmeans( X, k= or centres=, ... )
-        in: n_clusters= [init_size=] for kmeanssample
-        out: km.centres, km.Xtocentre, km.distances
-        iterator:
-            for jcentre, J in km:
-                clustercentre = centres[jcentre]
-                J indexes e.g. X[J], classes[J]
-    """
 
     def __init__(self, n_clusters=8, init='random', max_iter=100,
                  batch_size=100, verbose=0, compute_labels=True,
@@ -991,12 +1029,14 @@ class SampleKMeans(KMeans):
         self.init_size = init_size
 
     def fit(self, X, y=None):
-        super(SampleKMeans, self).fit(X, y)
+        if self.init_size is None or self.init_size == 0:
+            init_size = max(.1 * X.shape[0], 10 * self.n_clusters)
+        else:
+            init_size = self.init_size
+        X_train = X[:init_size, :]
+        super(SampleKMeans, self).fit(X_train, y)
+        self.labels_ = super(SampleKMeans, self).predict(X)
         return self
-
-    def __iter__(self):
-        for jc in range(len(self.centres)):
-            yield jc, (self.Xtocentre == jc)
 
 
 def pairwise_distances_sparse(X, Y, metric, metric_kwargs=None):
