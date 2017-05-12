@@ -85,9 +85,15 @@ op = OptionParser()
 op.add_option("--lsa",
               dest="n_components", type="int",
               help="Preprocess documents with latent semantic analysis.")
-op.add_option("--batch", type=float, default=.1,
+op.add_option("--minibatch",
+              action="store_true", dest="minibatch", default=False,
+              help="Use k-means minibatch algorithm.")
+op.add_option("--sample",
+              action="store_true", dest="sample", default=False,
+              help="Use k-means sample algorithm.")
+op.add_option("--batch-size", type=float, default=.01,
               help="Batch size for k-means minibatch algorithm.")
-op.add_option("--sample", type=float, default=.1,
+op.add_option("--init-size", type=float, default=.03,
               help="Number of samples for k-means algorithm training phase.")
 op.add_option("--no-idf",
               action="store_false", dest="use_idf", default=True,
@@ -212,20 +218,26 @@ if opts.n_components:
     print()
 
 
+if opts.batch_size < 1:
+    batch_size = int(opts.batch_size * X.shape[0])
+else:
+    batch_size = int(max(opts.batch_size, 10 * true_k))
+
+if opts.init_size < 1:
+    init_size = int(opts.init_size * X.shape[0])
+else:
+    init_size = int(max(opts.init_size, 10 * true_k))
+
+
 ###############################################################################
 # Do the actual clustering
 
-if opts.batch > 0:
-    batch_size = int(opts.batch)
+if opts.minibatch:
     km = MiniBatchKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=opts.n_init,
                          metric=opts.metric, metric_kwargs={'a': opts.a},
-                         batch_size=batch_size, verbose=opts.verbose)
+                         init_size=init_size, batch_size=batch_size, verbose=opts.verbose)
+elif opts.sample:
 
-elif opts.sample > 0:
-    if opts.sample < 1:
-        init_size = int(opts.sample * X.shape[0])
-    else:
-        init_size = max(opts.sample, 10 * true_k)
     km = SampleKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=opts.n_init,
                       metric=opts.metric, metric_kwargs={'a': opts.a},
                       init_size=init_size, verbose=opts.verbose)
