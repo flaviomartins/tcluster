@@ -213,11 +213,11 @@ if opts.n_components:
 # Do the actual clustering
 
 if opts.sample:
-    km = SampleKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=1,
+    km = SampleKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=10,
                       metric=opts.metric, metric_kwargs={'a': opts.a},
                       init_size=None, verbose=opts.verbose)
 else:
-    km = KMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=1,
+    km = KMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=10,
                 metric=opts.metric, metric_kwargs={'a': opts.a},
                 verbose=opts.verbose)
 
@@ -229,11 +229,11 @@ print()
 print("Number of iterations %d: cluster sizes:" % km.n_iter_, np.bincount(km.labels_))
 print("Purity: %0.3f" % purity_score(labels, km.labels_))
 homogeneity, completeness, v_measure_score = metrics.homogeneity_completeness_v_measure(labels, km.labels_)
-print("Homogeneity: %0.3f" % homogeneity)
-print("Completeness: %0.3f" % completeness)
 print("NMI: %0.3f" % v_measure_score)
 print("ARI: %0.3f" % metrics.adjusted_rand_score(labels, km.labels_))
 print("AMI: %0.3f" % metrics.adjusted_mutual_info_score(labels, km.labels_))
+print("Homogeneity: %0.3f" % homogeneity)
+print("Completeness: %0.3f" % completeness)
 print("Silhouette Coefficient: %0.3f"
       % metrics.silhouette_score(X, km.labels_, sample_size=1000))
 

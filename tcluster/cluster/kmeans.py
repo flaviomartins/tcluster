@@ -1,13 +1,23 @@
 """K-means clustering"""
 
-# Authors: Flavio Martins <flaviomartins@acm.org>
+# Authors: Gael Varoquaux <gael.varoquaux@normalesup.org>
+#          Thomas Rueckstiess <ruecksti@in.tum.de>
+#          James Bergstra <james.bergstra@umontreal.ca>
+#          Jan Schlueter <scikit-learn@jan-schlueter.de>
+#          Nelle Varoquaux
+#          Peter Prettenhofer <peter.prettenhofer@gmail.com>
+#          Olivier Grisel <olivier.grisel@ensta.org>
+#          Mathieu Blondel <mathieu@mblondel.org>
+#          Robert Layton <robertlayton@gmail.com>
+#          Flavio Martins <flaviomartins@acm.org>
 # License: BSD 3 clause
-# Some code shamelessly lifted from sklearn
 
 import warnings
 
 import numpy as np
 import scipy.sparse as sp
+from sklearn.base import BaseEstimator, ClusterMixin, TransformerMixin
+from sklearn.cluster import _k_means
 
 from sklearn.externals.joblib import Parallel, delayed
 from sklearn.externals.six import string_types
@@ -17,6 +27,7 @@ from sklearn.metrics.pairwise import euclidean_distances, pairwise_distances, \
 from sklearn.utils import check_random_state, check_array, as_float_array
 from sklearn.utils.extmath import row_norms, squared_norm
 from sklearn.utils.sparsefuncs import mean_variance_axis
+from sklearn.utils.validation import check_is_fitted, FLOAT_DTYPES
 
 from tcluster.metrics.jsd import jensen_shannon_divergence
 from tcluster.metrics.nkl import nkl_metric
@@ -149,10 +160,10 @@ def _tolerance(X, tol):
     return np.mean(variances) * tol
 
 
-def k_means(X, n_clusters, init='random', precompute_distances='auto',
+def k_means(X, n_clusters, init='k-means++', precompute_distances='auto',
             n_init=10, max_iter=300, verbose=False,
             tol=1e-4, random_state=None, copy_x=True, n_jobs=1,
-            algorithm="full", return_n_iter=False,
+            algorithm="auto", return_n_iter=False,
             metric='euclidean', metric_kwargs=None):
     """K-means clustering algorithm.
 
@@ -175,8 +186,12 @@ def k_means(X, n_clusters, init='random', precompute_distances='auto',
         centroid seeds. The final results will be the best output of
         n_init consecutive runs in terms of inertia.
 
-    init : {'random', 'sample', or ndarray, or a callable}, optional
-        Method for initialization, default to 'random':
+    init : {'k-means++', 'random', or ndarray, or a callable}, optional
+        Method for initialization, default to 'k-means++':
+
+        'k-means++' : selects initial cluster centers for k-mean
+        clustering in a smart way to speed up convergence. See section
+        Notes in k_init for more details.
 
         'random': generate k centroids from a Gaussian with mean and
         variance estimated from the data.
@@ -187,8 +202,11 @@ def k_means(X, n_clusters, init='random', precompute_distances='auto',
         If a callable is passed, it should take arguments X, k and
         and a random state and return an initialization.
 
-    algorithm : "full", default="full"
+    algorithm : "auto", "full" or "elkan", default="auto"
         K-means algorithm to use. The classical EM-style algorithm is "full".
+        The "elkan" variation is more efficient by using the triangle
+        inequality, but currently doesn't support sparse data. "auto" chooses
+        "elkan" for dense data and "full" for sparse data.
 
     precompute_distances : {'auto', True, False}
         Precompute distances (faster but takes more memory).
@@ -231,18 +249,34 @@ def k_means(X, n_clusters, init='random', precompute_distances='auto',
     return_n_iter : bool, optional
         Whether or not to return the number of iterations.
 
-    metric : default="euclidean", optional
+    metric : string or callable, default 'euclidean'
+        metric to use for distance computation. Any metric from scikit-learn
+        or scipy.spatial.distance can be used.
+
+        If metric is a callable function, it is called on each
+        pair of instances (rows) and the resulting value recorded. The callable
+        should take two arrays as input and return one value indicating the
+        distance between them. This works for Scipy's metrics, but is less
+        efficient than passing the metric name as a string.
+
+        Distance matrices are not supported.
+
         Valid values for metric are:
 
-        - From scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1', 'l2',
-          'manhattan']. These metrics support sparse matrix inputs.
-    
-        - From scipy.spatial.distance: ['braycurtis', 'canberra', 'chebyshev',
-          'correlation', 'dice', 'hamming', 'jaccard', 'kulsinski', 'mahalanobis',
-          'matching', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-          'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule']
-          See the documentation for scipy.spatial.distance for details on these
-          metrics. These metrics do not support sparse matrix inputs.
+        - from scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1', 'l2',
+          'manhattan']
+
+        - from scipy.spatial.distance: ['braycurtis', 'canberra', 'chebyshev',
+          'correlation', 'dice', 'hamming', 'jaccard', 'kulsinski',
+          'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
+          'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
+          'sqeuclidean', 'yule']
+
+        See the documentation for scipy.spatial.distance for details on these
+        metrics.
+
+    metric_kwargs : dict, optional
+        Keyword arguments to pass to specified metric function.
 
     Returns
     -------
@@ -271,8 +305,23 @@ def k_means(X, n_clusters, init='random', precompute_distances='auto',
         raise ValueError('Number of iterations should be a positive number,'
                          ' got %d instead' % max_iter)
 
+    best_inertia = np.infty
     X = as_float_array(X, copy=copy_x)
     tol = _tolerance(X, tol)
+
+    # If the distances are precomputed every job will create a matrix of shape
+    # (n_clusters, n_samples). To stop KMeans from eating up memory we only
+    # activate this if the created matrix is guaranteed to be under 100MB. 12
+    # million entries consume a little under 100MB if they are of type double.
+    if precompute_distances == 'auto':
+        n_samples = X.shape[0]
+        precompute_distances = (n_clusters * n_samples) < 12e6
+    elif isinstance(precompute_distances, bool):
+        pass
+    else:
+        raise ValueError("precompute_distances should be 'auto' or True/False"
+                         ", but a value of %r was passed" %
+                         precompute_distances)
 
     if metric == 'euclidean':
         # subtract of mean of x for more accurate distance computations
@@ -303,13 +352,17 @@ def k_means(X, n_clusters, init='random', precompute_distances='auto',
 
     best_labels, best_inertia, best_centers = None, None, None
     if n_clusters == 1:
+        # elkan doesn't make sense for a single cluster, full will produce
+        # the right result.
         algorithm = "full"
     if algorithm == "auto":
-        algorithm = "full"
+        algorithm = "full" if sp.issparse(X) else 'elkan'
     if algorithm == "full":
         kmeans_single = _kmeans_single_lloyd
+    elif algorithm == "elkan":
+        kmeans_single = _kmeans_single_lloyd
     else:
-        raise ValueError("Algorithm must be 'auto' or 'full', got"
+        raise ValueError("Algorithm must be 'auto', 'full' or 'elkan', got"
                          " %s" % str(algorithm))
     if n_jobs == 1:
         # For a single thread, less memory is needed if we just store one set
@@ -447,10 +500,15 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
         labels, inertia = \
             _labels_inertia(X, x_squared_norms, centers,
                             precompute_distances=precompute_distances,
-                            distances=distances, metric=metric, metric_kwargs=metric_kwargs)
+                            distances=distances,
+                            metric=metric, metric_kwargs=metric_kwargs)
 
         # computation of the means is also called the M-step of EM
-        centers = _centers(X, labels, n_clusters, distances)
+        if sp.issparse(X):
+            centers = _k_means._centers_sparse(X, labels, n_clusters,
+                                               distances)
+        else:
+            centers = _k_means._centers_dense(X, labels, n_clusters, distances)
 
         if verbose:
             print("Iteration %2d, inertia %.3f" % (i, inertia))
@@ -474,7 +532,8 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
         best_labels, best_inertia = \
             _labels_inertia(X, x_squared_norms, best_centers,
                             precompute_distances=precompute_distances,
-                            distances=distances, metric=metric, metric_kwargs=metric_kwargs)
+                            distances=distances,
+                            metric=metric, metric_kwargs=metric_kwargs)
 
     return best_labels, best_inertia, best_centers, i + 1
 
@@ -546,38 +605,6 @@ def _labels_inertia(X, x_squared_norms, centers,
         distances[:] = mindist
     inertia = mindist.sum()
     return labels, inertia
-
-
-def _centers(X, labels, n_clusters, distances):
-    """
-    M step of the K-means EM algorithm
-    
-        Computation of cluster centers / means.
-    
-        Parameters
-        ----------
-        X : array-like, shape (n_samples, n_features)
-    
-        labels : array of integers, shape (n_samples)
-            Current label assignment
-    
-        n_clusters : int
-            Number of desired clusters
-    
-        distances : array-like, shape (n_samples)
-            Distance to closest cluster for each sample.
-    
-        Returns
-        -------
-        centers : array, shape (n_clusters, n_features)
-            The resulting centers
-    """
-    centers = np.empty((n_clusters, X.shape[1]), np.float64)
-    for i in range(n_clusters):
-        k = np.where(labels == i)[0]
-        if len(k) > 0:
-            centers[i] = X[k].mean(axis=0)
-    return centers
 
 
 def _init_centroids(X, k, init, random_state=None, x_squared_norms=None,
@@ -660,7 +687,7 @@ def _init_centroids(X, k, init, random_state=None, x_squared_norms=None,
     return centers
 
 
-class KMeans(object):
+class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
     """K-Means clustering
 
     Read more in the :ref:`User Guide <k_means>`.
@@ -791,10 +818,11 @@ class KMeans(object):
 
     """
 
-    def __init__(self, n_clusters=8, init='random', n_init=10,
+    def __init__(self, n_clusters=8, init='k-means++', n_init=10,
                  max_iter=300, tol=1e-4, precompute_distances='auto',
                  verbose=0, random_state=None, copy_x=True,
-                 n_jobs=1, algorithm='auto', metric='euclidean', metric_kwargs=None):
+                 n_jobs=1, algorithm='auto',
+                 metric='euclidean', metric_kwargs=None):
 
         self.n_clusters = n_clusters
         self.init = init
@@ -818,9 +846,20 @@ class KMeans(object):
                 X.shape[0], self.n_clusters))
         return X
 
+    def _check_test_data(self, X):
+        X = check_array(X, accept_sparse='csr', dtype=FLOAT_DTYPES)
+        n_samples, n_features = X.shape
+        expected_n_features = self.cluster_centers_.shape[1]
+        if not n_features == expected_n_features:
+            raise ValueError("Incorrect number of features. "
+                             "Got %d features, expected %d" % (
+                                 n_features, expected_n_features))
+
+        return X
+
     def fit(self, X, y=None):
         """Compute k-means clustering.
-    
+
         Parameters
         ----------
         X : array-like or sparse matrix, shape=(n_samples, n_features)
@@ -840,9 +879,93 @@ class KMeans(object):
                 metric=self.metric, metric_kwargs=self.metric_kwargs)
         return self
 
-    def __iter__(self):
-        for jc in range(len(self.centres)):
-            yield jc, (self.Xtocentre == jc)
+    def fit_predict(self, X, y=None):
+        """Compute cluster centers and predict cluster index for each sample.
+
+        Convenience method; equivalent to calling fit(X) followed by
+        predict(X).
+        """
+        return self.fit(X).labels_
+
+    def fit_transform(self, X, y=None):
+        """Compute clustering and transform X to cluster-distance space.
+
+        Equivalent to fit(X).transform(X), but more efficiently implemented.
+        """
+        # Currently, this just skips a copy of the data if it is not in
+        # np.array or CSR format already.
+        # XXX This skips _check_test_data, which may change the dtype;
+        # we should refactor the input validation.
+        X = self._check_fit_data(X)
+        return self.fit(X)._transform(X)
+
+    def transform(self, X, y=None):
+        """Transform X to a cluster-distance space.
+
+        In the new space, each dimension is the distance to the cluster
+        centers.  Note that even if X is sparse, the array returned by
+        `transform` will typically be dense.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            New data to transform.
+
+        Returns
+        -------
+        X_new : array, shape [n_samples, k]
+            X transformed in the new space.
+        """
+        check_is_fitted(self, 'cluster_centers_')
+
+        X = self._check_test_data(X)
+        return self._transform(X)
+
+    def _transform(self, X):
+        """guts of transform method; no input validation"""
+        return euclidean_distances(X, self.cluster_centers_)
+
+    def predict(self, X):
+        """Predict the closest cluster each sample in X belongs to.
+
+        In the vector quantization literature, `cluster_centers_` is called
+        the code book and each value returned by `predict` is the index of
+        the closest code in the code book.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            New data to predict.
+
+        Returns
+        -------
+        labels : array, shape [n_samples,]
+            Index of the cluster each sample belongs to.
+        """
+        check_is_fitted(self, 'cluster_centers_')
+
+        X = self._check_test_data(X)
+        x_squared_norms = row_norms(X, squared=True)
+        return _labels_inertia(X, x_squared_norms, self.cluster_centers_)[0]
+
+    def score(self, X, y=None):
+        """Opposite of the value of X on the K-means objective.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            New data.
+
+        Returns
+        -------
+        score : float
+            Opposite of the value of X on the K-means objective.
+        """
+        check_is_fitted(self, 'cluster_centers_')
+
+        X = self._check_test_data(X)
+        x_squared_norms = row_norms(X, squared=True)
+        return -_labels_inertia(X, x_squared_norms, self.cluster_centers_)[1]
 
 
 class SampleKMeans(KMeans):
@@ -887,7 +1010,7 @@ def pairwise_distances_sparse(X, Y, metric, metric_kwargs=None):
     sxy = 2 * sp.issparse(X) + sp.issparse(Y)
     if sxy == 0:
         return pairwise_distances(X, Y, metric=metric, **metric_kwargs)
-    d = np.empty((X.shape[0], Y.shape[0]), np.float64)
+    d = np.empty((X.shape[0], Y.shape[0]), dtype=X.dtype)
     if sxy == 2:
         for j, x in enumerate(X):
             d[j] = pairwise_distances(x.todense(), Y, metric=metric, **metric_kwargs)[0]
