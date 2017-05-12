@@ -1479,11 +1479,13 @@ class MiniBatchKMeans(KMeans):
         self.n_iter_ = iteration_idx + 1
 
         if self.compute_labels:
-            self.labels_, self.inertia_ = self._labels_inertia_minibatch(X)
+            self.labels_, self.inertia_ = self._labels_inertia_minibatch(X,
+                                                                         metric=self.metric,
+                                                                         metric_kwargs=self.metric_kwargs)
 
         return self
 
-    def _labels_inertia_minibatch(self, X):
+    def _labels_inertia_minibatch(self, X, metric='euclidean', metric_kwargs=None):
         """Compute labels and inertia using mini batches.
 
         This is slightly slower than doing everything at once but preventes
@@ -1507,7 +1509,8 @@ class MiniBatchKMeans(KMeans):
         x_squared_norms = row_norms(X, squared=True)
         slices = gen_batches(X.shape[0], self.batch_size)
         results = [_labels_inertia(X[s], x_squared_norms[s],
-                                   self.cluster_centers_) for s in slices]
+                                   self.cluster_centers_,
+                                   metric=metric, metric_kwargs=metric_kwargs) for s in slices]
         labels, inertia = zip(*results)
         return np.hstack(labels), np.sum(inertia)
 
