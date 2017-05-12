@@ -347,11 +347,8 @@ def k_means(X, n_clusters, init='k-means++', precompute_distances='auto',
                 % n_init, RuntimeWarning, stacklevel=2)
             n_init = 1
 
-    if metric == 'euclidean':
-        # precompute squared norms of data points
-        x_squared_norms = row_norms(X, squared=True)
-    else:
-        x_squared_norms = None
+    # precompute squared norms of data points
+    x_squared_norms = row_norms(X, squared=True)
 
     best_labels, best_inertia, best_centers = None, None, None
     if n_clusters == 1:
