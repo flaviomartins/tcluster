@@ -213,18 +213,20 @@ if opts.n_components:
 # Do the actual clustering
 
 if opts.sample:
-    km = SampleKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=1, metric=opts.metric, a=opts.a,
-                      init_size=None, verbose=2 if opts.verbose else 0)
+    km = SampleKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=1,
+                      metric=opts.metric, metric_kwargs={'a': opts.a},
+                      init_size=None, verbose=opts.verbose)
 else:
-    km = KMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=1, metric=opts.metric, a=opts.a,
-                verbose=2 if opts.verbose else 0)
+    km = KMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=1,
+                metric=opts.metric, metric_kwargs={'a': opts.a},
+                verbose=opts.verbose)
 
 print("Clustering sparse data with %s" % km)
 t0 = time()
 km.fit(X)
 print("done in %0.3fs" % (time() - t0))
 print()
-
+print("Number of iterations %d: cluster sizes:" % km.n_iter_, np.bincount(km.labels_))
 print("Purity: %0.3f" % purity_score(labels, km.labels_))
 homogeneity, completeness, v_measure_score = metrics.homogeneity_completeness_v_measure(labels, km.labels_)
 print("Homogeneity: %0.3f" % homogeneity)
