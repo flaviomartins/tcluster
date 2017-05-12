@@ -85,9 +85,8 @@ op = OptionParser()
 op.add_option("--lsa",
               dest="n_components", type="int",
               help="Preprocess documents with latent semantic analysis.")
-op.add_option("--no-sample",
-              action="store_false", dest="sample", default=True,
-              help="Use ordinary k-means algorithm (single run).")
+op.add_option("--sample", type=float, default=.1,
+              help="Number of samples for k-means algorithm training phase.")
 op.add_option("--no-idf",
               action="store_false", dest="use_idf", default=True,
               help="Disable Inverse Document Frequency feature weighting.")
@@ -96,6 +95,8 @@ op.add_option("--use-hashing",
               help="Use a hashing feature vectorizer")
 op.add_option("--max-iter", type=int, default=50,
               help="Maximum number of iterations")
+op.add_option("--n-init", type=int, default=1,
+              help="Number of time the k-means algorithm will be run with different centroid seeds.")
 op.add_option("--n-features", type=int, default=10000,
               help="Maximum number of features (dimensions)"
                    " to extract from text.")
@@ -212,12 +213,16 @@ if opts.n_components:
 ###############################################################################
 # Do the actual clustering
 
-if opts.sample:
-    km = SampleKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=10,
+if opts.sample > 0:
+    if opts.sample < 1:
+        init_size = opts.sample * X.shape[0]
+    else:
+        init_size = max(opts.sample, 10 * true_k)
+    km = SampleKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=opts.n_init,
                       metric=opts.metric, metric_kwargs={'a': opts.a},
-                      init_size=.1 * X.shape[0], verbose=opts.verbose)
+                      init_size=init_size, verbose=opts.verbose)
 else:
-    km = KMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=10,
+    km = KMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=opts.n_init,
                 metric=opts.metric, metric_kwargs={'a': opts.a},
                 verbose=opts.verbose)
 
