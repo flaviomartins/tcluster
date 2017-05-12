@@ -1208,7 +1208,7 @@ def _mini_batch_convergence(model, iteration_idx, n_iter, tol,
         no_improvement += 1
 
     if (model.max_no_improvement is not None
-        and no_improvement >= model.max_no_improvement):
+            and no_improvement >= model.max_no_improvement):
         if verbose:
             print('Converged (lack of improvement in inertia)'
                   ' at iteration %d/%d'
@@ -1335,7 +1335,8 @@ class MiniBatchKMeans(KMeans):
     def __init__(self, n_clusters=8, init='k-means++', max_iter=100,
                  batch_size=100, verbose=0, compute_labels=True,
                  random_state=None, tol=0.0, max_no_improvement=10,
-                 init_size=None, n_init=3, metric='euclidean', metric_kwargs=None, reassignment_ratio=0.01):
+                 init_size=None, n_init=3, reassignment_ratio=0.01,
+                 metric='euclidean', metric_kwargs=None):
 
         super(MiniBatchKMeans, self).__init__(
             n_clusters=n_clusters, init=init, max_iter=max_iter,
@@ -1601,7 +1602,8 @@ class SampleKMeans(KMeans):
     def __init__(self, n_clusters=8, init='random', max_iter=100,
                  batch_size=100, verbose=0, compute_labels=True,
                  random_state=None, tol=1e-4, max_no_improvement=10,
-                 init_size=None, n_init=3, metric='euclidean', metric_kwargs=None, reassignment_ratio=0.01):
+                 init_size=None, n_init=3, reassignment_ratio=0.01,
+                 metric='euclidean', metric_kwargs=None):
 
         super(SampleKMeans, self).__init__(
             n_clusters=n_clusters, init=init, max_iter=max_iter,
