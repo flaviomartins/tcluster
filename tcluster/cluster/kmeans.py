@@ -504,11 +504,14 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                             metric=metric, metric_kwargs=metric_kwargs)
 
         # computation of the means is also called the M-step of EM
-        if sp.issparse(X):
-            centers = _k_means._centers_sparse(X, labels, n_clusters,
-                                               distances)
+        if metric == 'euclidean':
+            if sp.issparse(X):
+                centers = _k_means._centers_sparse(X, labels, n_clusters,
+                                                   distances)
+            else:
+                centers = _k_means._centers_dense(X, labels, n_clusters, distances)
         else:
-            centers = _k_means._centers_dense(X, labels, n_clusters, distances)
+            centers = _centers(X, labels, n_clusters, distances)
 
         if verbose:
             print("Iteration %2d, inertia %.3f" % (i, inertia))
@@ -536,6 +539,38 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                             metric=metric, metric_kwargs=metric_kwargs)
 
     return best_labels, best_inertia, best_centers, i + 1
+
+
+def _centers(X, labels, n_clusters, distances):
+    """
+    M step of the K-means EM algorithm
+    
+        Computation of cluster centers / means.
+    
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+    
+        labels : array of integers, shape (n_samples)
+            Current label assignment
+    
+        n_clusters : int
+            Number of desired clusters
+    
+        distances : array-like, shape (n_samples)
+            Distance to closest cluster for each sample.
+    
+        Returns
+        -------
+        centers : array, shape (n_clusters, n_features)
+            The resulting centers
+    """
+    centers = np.empty((n_clusters, X.shape[1]), dtype=X.dtype)
+    for i in range(n_clusters):
+        k = np.where(labels == i)[0]
+        if len(k) > 0:
+            centers[i] = X[k].mean(axis=0)
+    return centers
 
 
 def _labels_inertia_precompute_dense(X, x_squared_norms, centers, distances,
