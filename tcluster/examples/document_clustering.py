@@ -234,6 +234,7 @@ else:
 
 if opts.minibatch:
     km = MiniBatchKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=opts.n_init,
+                         max_no_improvement=opts.max_iter, compute_labels=True,
                          metric=opts.metric, metric_kwargs={'a': opts.a},
                          init_size=init_size, batch_size=batch_size, verbose=opts.verbose)
 elif opts.sample:

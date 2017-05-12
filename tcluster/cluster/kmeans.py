@@ -995,7 +995,8 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
 
         X = self._check_test_data(X)
         x_squared_norms = row_norms(X, squared=True)
-        return _labels_inertia(X, x_squared_norms, self.cluster_centers_)[0]
+        return _labels_inertia(X, x_squared_norms, self.cluster_centers_,
+                               metric=self.metric, metric_kwargs=self.metric_kwargs)[0]
 
     def score(self, X, y=None):
         """Opposite of the value of X on the K-means objective.
@@ -1014,7 +1015,8 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
 
         X = self._check_test_data(X)
         x_squared_norms = row_norms(X, squared=True)
-        return -_labels_inertia(X, x_squared_norms, self.cluster_centers_)[1]
+        return -_labels_inertia(X, x_squared_norms, self.cluster_centers_,
+                                metric=self.metric, metric_kwargs=self.metric_kwargs)[1]
 
 
 def _mini_batch_step(X, x_squared_norms, centers, counts,
@@ -1559,11 +1561,13 @@ class MiniBatchKMeans(KMeans):
                          random_reassign=random_reassign, distances=distances,
                          random_state=self.random_state_,
                          reassignment_ratio=self.reassignment_ratio,
-                         verbose=self.verbose)
+                         verbose=self.verbose,
+                         metric=self.metric, metric_kwargs=self.metric_kwargs)
 
         if self.compute_labels:
             self.labels_, self.inertia_ = _labels_inertia(
-                X, x_squared_norms, self.cluster_centers_)
+                X, x_squared_norms, self.cluster_centers_,
+                metric=self.metric, metric_kwargs=self.metric_kwargs)
 
         return self
 
@@ -1587,7 +1591,9 @@ class MiniBatchKMeans(KMeans):
         check_is_fitted(self, 'cluster_centers_')
 
         X = self._check_test_data(X)
-        return self._labels_inertia_minibatch(X)[0]
+        return self._labels_inertia_minibatch(X,
+                                              metric=self.metric,
+                                              metric_kwargs=self.metric_kwargs)[0]
 
 
 class SampleKMeans(KMeans):
