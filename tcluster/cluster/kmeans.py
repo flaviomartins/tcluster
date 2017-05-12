@@ -1466,7 +1466,8 @@ class MiniBatchKMeans(KMeans):
                                  % (10 + self.counts_.min()) == 0),
                 random_state=random_state,
                 reassignment_ratio=self.reassignment_ratio,
-                verbose=self.verbose)
+                verbose=self.verbose,
+                metric=self.metric, metric_kwargs=self.metric_kwargs)
 
             # Monitor convergence and do early stopping if necessary
             if _mini_batch_convergence(
