@@ -108,6 +108,9 @@ op.add_option("--n-init", type=int, default=1,
 op.add_option("--n-features", type=int, default=10000,
               help="Maximum number of features (dimensions)"
                    " to extract from text.")
+op.add_option("--no-remove",
+              action="store_false", dest="remove_extra", default=True,
+              help="Use this to keep 'headers', 'footers', 'quotes'")
 op.add_option("--metric",
               dest="metric", type="str", default="euclidean",
               help="Specify the distance metric to use for KMeans.")
@@ -146,8 +149,12 @@ categories = None
 print("Loading 20 newsgroups dataset for categories:")
 print(categories)
 
+remove = ()
+if opts.remove_extra:
+    remove = ('headers', 'footers', 'quotes')
+
 dataset = fetch_20newsgroups(subset='all', categories=categories,
-                             remove=('headers', 'footers', 'quotes'),
+                             remove=remove,
                              shuffle=True, random_state=42)
 
 print("%d documents" % len(dataset.data))
