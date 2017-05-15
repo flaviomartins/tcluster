@@ -6,7 +6,7 @@ from scipy.special import xlogy, rel_entr
 import pyximport
 pyximport.install(setup_args={"include_dirs": np.get_include()},
                   reload_support=True)
-from tcluster.metrics.nkl_dist import nkl_dist
+from . import nkl_dist
 
 
 def nkl_metric(X, Y, p_B=None, a=0.1):

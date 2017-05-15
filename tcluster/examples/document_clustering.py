@@ -65,8 +65,7 @@ from sklearn.preprocessing import Normalizer
 from sklearn import metrics
 
 from tcluster.cluster import KMeans, SampleKMeans, MiniBatchKMeans
-from tcluster.metrics import nkl_transform
-from tcluster.metrics import purity_score
+from tcluster.metrics import nkl_transform, purity_score
 
 import logging
 from optparse import OptionParser

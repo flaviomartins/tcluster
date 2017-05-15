@@ -32,8 +32,8 @@ from sklearn.utils.sparsefuncs import mean_variance_axis
 from sklearn.utils.sparsefuncs_fast import assign_rows_csr
 from sklearn.utils.validation import check_is_fitted, FLOAT_DTYPES
 
-from tcluster.metrics.jsd import jensen_shannon_divergence
-from tcluster.metrics.nkl import nkl_metric
+from ..metrics import jensen_shannon_divergence
+from ..metrics import nkl_metric
 
 
 ###############################################################################
@@ -507,7 +507,7 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                             metric=metric, metric_kwargs=metric_kwargs)
 
         # computation of the means is also called the M-step of EM
-        if metric == 'euclidean':
+        if metric in ['euclidean', 'cosine']:
             if sp.issparse(X):
                 centers = _k_means._centers_sparse(X, labels, n_clusters,
                                                    distances)
@@ -1686,7 +1686,7 @@ def pairwise_distances_sparse(X, Y, metric, metric_kwargs=None):
     return d
 
 
-def nearestcentres(X, centers, metric="euclidean", p=2, a=.1, precomputed_centres_mean=None):
+def nearestcentres(X, centers, metric='euclidean', p=2, a=.1, precomputed_centres_mean=None):
     """ each X -> nearest centre, any metric
             euclidean2 (~ withinss) is more sensitive to outliers,
             cityblock (manhattan, L1) less sensitive

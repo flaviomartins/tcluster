@@ -6,7 +6,7 @@ from scipy.special import rel_entr
 import pyximport
 pyximport.install(setup_args={"include_dirs": np.get_include()},
                   reload_support=True)
-from tcluster.metrics.js_div import js_div
+from . import js_div
 
 
 def jensen_shannon_divergence(X, Y):
