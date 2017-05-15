@@ -2,17 +2,20 @@ import numpy as np
 
 
 def purity_score(labels_true, labels_pred):
-    """
-    Calculate the purity score for the given cluster assignments and ground truth classes
+    """Purity between two clusterings
     
-    :param labels_true: the ground truth classes
-    :type labels_true: numpy.array
+    Parameters
+    ----------
+    labels_true : int array, shape = [n_samples]
+        A clustering of the data into disjoint subsets.
 
-    :param labels_pred: the cluster assignments array
-    :type labels_pred: numpy.array
-    
-    :returns: the purity score
-    :rtype: float
+    labels_pred : array, shape = [n_samples]
+        A clustering of the data into disjoint subsets.
+
+    Returns
+    -------
+    purity : float
+       score between 0.0 and 1.0. 1.0 stands for perfectly complete labeling
     """
 
     A = np.c_[(labels_pred, labels_true)]

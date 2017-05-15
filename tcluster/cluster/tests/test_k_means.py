@@ -1,6 +1,6 @@
 import numpy as np
 
-from tcluster.cluster.kmeans import k_means
+from tcluster.cluster import k_means
 
 
 N = 1000
