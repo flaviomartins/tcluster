@@ -35,6 +35,11 @@ from sklearn.utils.validation import check_is_fitted, FLOAT_DTYPES
 from ..metrics import jensen_shannon_divergence
 from ..metrics import nkl_metric
 
+import pyximport
+pyximport.install(setup_args={"include_dirs": np.get_include()},
+                  reload_support=True)
+from . import _k_means as _my_k_means
+
 
 ###############################################################################
 # Initialization heuristic
@@ -507,11 +512,19 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                             metric=metric, metric_kwargs=metric_kwargs)
 
         # computation of the means is also called the M-step of EM
-        if sp.issparse(X):
-            centers = _k_means._centers_sparse(X, labels, n_clusters,
-                                               distances)
+        if metric in ['euclidean', 'cosine']:
+            if sp.issparse(X):
+                centers = _k_means._centers_sparse(X, labels, n_clusters,
+                                                   distances)
+            else:
+                centers = _k_means._centers_dense(X, labels, n_clusters, distances)
         else:
-            centers = _k_means._centers_dense(X, labels, n_clusters, distances)
+            # no relocation
+            if sp.issparse(X):
+                centers = _my_k_means._centers_sparse(X, labels, n_clusters,
+                                                      distances)
+            else:
+                centers = _my_k_means._centers_dense(X, labels, n_clusters, distances)
 
         if verbose:
             print("Iteration %2d, inertia %.3f" % (i, inertia))
@@ -544,22 +557,22 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
 def _centers(X, labels, n_clusters, distances):
     """
     M step of the K-means EM algorithm
-    
+
         Computation of cluster centers / means.
-    
+
         Parameters
         ----------
         X : array-like, shape (n_samples, n_features)
-    
+
         labels : array of integers, shape (n_samples)
             Current label assignment
-    
+
         n_clusters : int
             Number of desired clusters
-    
+
         distances : array-like, shape (n_samples)
             Distance to closest cluster for each sample.
-    
+
         Returns
         -------
         centers : array, shape (n_clusters, n_features)
