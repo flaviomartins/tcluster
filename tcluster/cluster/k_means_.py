@@ -525,6 +525,8 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                                                       distances)
             else:
                 centers = _my_k_means._centers_dense(X, labels, n_clusters, distances)
+            # cdivision workaround
+            centers[~np.isfinite(centers)] = 0
 
         if verbose:
             print("Iteration %2d, inertia %.3f" % (i, inertia))
