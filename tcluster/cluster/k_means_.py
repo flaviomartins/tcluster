@@ -576,74 +576,6 @@ def _centers(X, labels, n_clusters, distances):
     return centers
 
 
-def _labels_inertia_precompute_dense(X, x_squared_norms, centers, distances,
-                                         metric='euclidean', metric_kwargs=None):
-    """Compute labels and inertia using a full distance matrix.
-
-    This will overwrite the 'distances' array in-place.
-
-    Parameters
-    ----------
-    X : numpy array, shape (n_sample, n_features)
-        Input data.
-
-    x_squared_norms : numpy array, shape (n_samples,)
-        Precomputed squared norms of X.
-
-    centers : numpy array, shape (n_clusters, n_features)
-        Cluster centers which data is assigned to.
-
-    distances : numpy array, shape (n_samples,)
-        Pre-allocated array in which distances are stored.
-
-    Returns
-    -------
-    labels : numpy array, dtype=np.int, shape (n_samples,)
-        Indices of clusters that samples are assigned to.
-
-    inertia : float
-        Sum of distances of samples to their closest cluster center.
-
-    """
-    n_samples = X.shape[0]
-
-    # Breakup nearest neighbor distance computation into batches to prevent
-    # memory blowup in the case of a large number of samples and clusters.
-    # TODO: Once PR #7383 is merged use check_inputs=False in metric_kwargs.
-    if metric == 'euclidean':
-        euclidean_kwargs = {'squared': True}
-        if metric_kwargs is not None:
-            euclidean_kwargs.update(metric_kwargs)
-        labels, mindist = pairwise_distances_argmin_min(
-            X=X, Y=centers, metric='euclidean', metric_kwargs=euclidean_kwargs)
-    elif metric in ['jsd', 'jensen-shannon']:
-        D = pairwise_distances_sparse(
-            X=X, Y=centers, metric=jensen_shannon_divergence)
-        labels = D.argmin(axis=1)
-        mindist = D[np.arange(n_samples), labels]
-    elif metric in ['nkl', 'negative-kullback-leibler']:
-        centers_mean = centers.mean(axis=0)
-        nkl_kwargs = {'p_B': centers_mean}
-        if metric_kwargs is not None:
-            nkl_kwargs.update(metric_kwargs)
-        D = pairwise_distances_sparse(
-            X=X, Y=centers, metric=nkl_metric, metric_kwargs=nkl_kwargs)
-        labels = D.argmin(axis=1)
-        mindist = D[np.arange(n_samples), labels]
-    else:
-        if metric == 'cosine':
-            metric_kwargs = None
-        labels, mindist = pairwise_distances_argmin_min(
-            X=X, Y=centers, metric=metric, metric_kwargs=metric_kwargs)
-    # cython k-means code assumes int32 inputs
-    labels = labels.astype(np.int32)
-    if n_samples == distances.shape[0]:
-        # distances will be changed in-place
-        distances[:] = mindist
-    inertia = mindist.sum()
-    return labels, inertia
-
-
 def _labels_inertia(X, x_squared_norms, centers,
                     precompute_distances=True, distances=None,
                     metric='euclidean', metric_kwargs=None):
@@ -686,9 +618,42 @@ def _labels_inertia(X, x_squared_norms, centers,
     if distances is None:
         distances = np.zeros(shape=(0,), dtype=X.dtype)
     # distances will be changed in-place
-    return _labels_inertia_precompute_dense(X, x_squared_norms,
-                                            centers, distances,
-                                            metric, metric_kwargs)
+
+    # Breakup nearest neighbor distance computation into batches to prevent
+    # memory blowup in the case of a large number of samples and clusters.
+    # TODO: Once PR #7383 is merged use check_inputs=False in metric_kwargs.
+    if metric == 'euclidean':
+        euclidean_kwargs = {'squared': True}
+        if metric_kwargs is not None:
+            euclidean_kwargs.update(metric_kwargs)
+        labels, mindist = pairwise_distances_argmin_min(
+            X=X, Y=centers, metric='euclidean', metric_kwargs=euclidean_kwargs)
+    elif metric in ['jsd', 'jensen-shannon']:
+        D = pairwise_distances_sparse(
+            X=X, Y=centers, metric=jensen_shannon_divergence)
+        labels = D.argmin(axis=1)
+        mindist = D[np.arange(n_samples), labels]
+    elif metric in ['nkl', 'negative-kullback-leibler']:
+        centers_mean = centers.mean(axis=0)
+        nkl_kwargs = {'p_B': centers_mean}
+        if metric_kwargs is not None:
+            nkl_kwargs.update(metric_kwargs)
+        D = pairwise_distances_sparse(
+            X=X, Y=centers, metric=nkl_metric, metric_kwargs=nkl_kwargs)
+        labels = D.argmin(axis=1)
+        mindist = D[np.arange(n_samples), labels]
+    else:
+        if metric == 'cosine':
+            metric_kwargs = None
+        labels, mindist = pairwise_distances_argmin_min(
+            X=X, Y=centers, metric=metric, metric_kwargs=metric_kwargs)
+    # cython k-means code assumes int32 inputs
+    labels = labels.astype(np.int32)
+    if n_samples == distances.shape[0]:
+        # distances will be changed in-place
+        distances[:] = mindist
+    inertia = mindist.sum()
+    return labels, inertia
 
 
 def _init_centroids(X, k, init, random_state=None, x_squared_norms=None,

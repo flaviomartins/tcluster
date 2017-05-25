@@ -244,7 +244,6 @@ if opts.minibatch:
                          metric=opts.metric, metric_kwargs={'a': opts.a},
                          init_size=init_size, batch_size=batch_size, verbose=opts.verbose)
 elif opts.sample:
-
     km = SampleKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=opts.n_init,
                       metric=opts.metric, metric_kwargs={'a': opts.a},
                       init_size=init_size, verbose=opts.verbose)
