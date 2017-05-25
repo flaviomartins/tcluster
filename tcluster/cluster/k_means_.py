@@ -507,14 +507,11 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                             metric=metric, metric_kwargs=metric_kwargs)
 
         # computation of the means is also called the M-step of EM
-        if metric in ['euclidean', 'cosine']:
-            if sp.issparse(X):
-                centers = _k_means._centers_sparse(X, labels, n_clusters,
-                                                   distances)
-            else:
-                centers = _k_means._centers_dense(X, labels, n_clusters, distances)
+        if sp.issparse(X):
+            centers = _k_means._centers_sparse(X, labels, n_clusters,
+                                               distances)
         else:
-            centers = _centers(X, labels, n_clusters, distances)
+            centers = _k_means._centers_dense(X, labels, n_clusters, distances)
 
         if verbose:
             print("Iteration %2d, inertia %.3f" % (i, inertia))
