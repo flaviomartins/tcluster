@@ -490,7 +490,7 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
     """
     random_state = check_random_state(random_state)
 
-    best_labels, best_inertia, best_centers = None, None, None
+    best_labels, best_inertia, best_centers, best_n_iter = None, None, None, None
     # init
     centers = _init_centroids(X, n_clusters, init, random_state=random_state,
                               x_squared_norms=x_squared_norms)
@@ -533,6 +533,7 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
             best_labels = labels.copy()
             best_centers = centers.copy()
             best_inertia = inertia
+            best_n_iter = i
 
         center_shift_total = squared_norm(centers_old - centers)
         if center_shift_total <= tol:
@@ -551,7 +552,7 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                             distances=distances,
                             metric=metric, metric_kwargs=metric_kwargs)
 
-    return best_labels, best_inertia, best_centers, i + 1
+    return best_labels, best_inertia, best_centers, best_n_iter
 
 
 def _centers(X, labels, n_clusters, distances):
