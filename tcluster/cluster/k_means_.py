@@ -650,7 +650,7 @@ def _labels_inertia(X, x_squared_norms, centers,
     if n_samples == distances.shape[0]:
         # distances will be changed in-place
         distances[:] = mindist
-    inertia = np.abs(mindist.sum())  # abs is needed to select best_centers iteration
+    inertia = np.abs(mindist).sum()  # abs is needed to select best_centers iteration
     return labels, inertia
 
 

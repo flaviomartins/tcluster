@@ -21,13 +21,11 @@ cpdef double nkl_dist(np.ndarray[np.double_t, ndim=1] v1, np.ndarray[np.double_t
     agg = 0.
     for d in prange(dim, nogil=True):
         xd, yd, bd = v1[d], v2[d], b[d]
+        if not (bd > 0. or bd < 0.):
+            continue
         a_bd = a * bd
         pd = (1. - a) * xd + a_bd
         pc = yd
-        if pd == pc:
-            continue
-        if not (a_bd > 0. or a_bd < 0.):
-            continue
         if pd > 0. and pc > 0.:
             agg += kl(pd, a_bd, pc)
             agg += kl(pc, a_bd, pd)
