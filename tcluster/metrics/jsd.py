@@ -25,7 +25,7 @@ def jensen_shannon_divergence(X, Y):
     entropy : function
         Computes entropy and K-L divergence
     """
-    return .5 * js_div(X.flatten(), Y.flatten())
+    return .5 * js_div(X, Y)
 
 
 def jensen_shannon_distance(X, Y):
@@ -44,7 +44,7 @@ def jensen_shannon_distance(X, Y):
     jensen_shannon_divergence : function
         Computes Jensen-Shannon Divergence 
     """
-    return np.sqrt(js_div(X.flatten(), Y.flatten()))
+    return np.sqrt(js_div(X, Y))
 
 
 def np_jensen_shannon_divergence(X, Y):

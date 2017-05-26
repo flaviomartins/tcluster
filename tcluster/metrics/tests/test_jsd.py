@@ -9,9 +9,9 @@ from tcluster.metrics.jsd import jensen_shannon_divergence
 
 def test_jsd_basic():
     for _ in range(8):
-        a = np.random.random((1, 16))
+        a = np.random.random(16)
         a = a / a.sum()
-        b = np.random.random((1, 16))
+        b = np.random.random(16)
         b = b / b.sum()
         c = a + b
         c = c / c.sum()

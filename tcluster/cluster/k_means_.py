@@ -633,7 +633,7 @@ def _labels_inertia(X, x_squared_norms, centers,
         mindist = D[np.arange(n_samples), labels]
     elif metric in ['nkl', 'negative-kullback-leibler']:
         centers_mean = centers.mean(axis=0)
-        nkl_kwargs = {'p_B': centers_mean}
+        nkl_kwargs = {'p_B': as_float_array(centers_mean, copy=True)}
         if metric_kwargs is not None:
             nkl_kwargs.update(metric_kwargs)
         D = pairwise_distances_sparse(
@@ -1661,6 +1661,7 @@ def nearestcentres(X, centers, metric='euclidean', p=2, a=.1, precomputed_centre
             centers_mean = centers.mean(axis=0)
         else:
             centers_mean = precomputed_centres_mean
+        centers_mean = as_float_array(centers_mean, copy=True)
         D = pairwise_distances_sparse(X, centers, p_B=centers_mean, a=a, metric=nkl_metric)
     else:
         D = pairwise_distances_sparse(X, centers, metric=metric, p=p)  # |X| x |centres|
