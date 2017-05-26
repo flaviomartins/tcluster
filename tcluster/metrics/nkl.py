@@ -30,7 +30,7 @@ def nkl_metric(X, Y, p_B=None, a=0.1):
     entropy : function
         Computes entropy and K-L divergence
     """
-    return nkl_dist(X.flatten(), Y.flatten(), np.array(p_B).flatten(), a)
+    return nkl_dist(X, Y, p_B, a)
 
 
 def np_nkl_metric(X, Y, p_B=None, a=0.1):

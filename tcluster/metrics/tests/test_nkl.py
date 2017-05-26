@@ -8,9 +8,9 @@ from tcluster.metrics.nkl import nkl_metric, np_nkl_metric
 
 def test_nkl_basic():
     for _ in range(8):
-        a = np.random.random((1, 16))
+        a = np.random.random(16)
         a = a / a.sum()
-        b = np.random.random((1, 16))
+        b = np.random.random(16)
         b = b / b.sum()
         c = a + b
         c = c / c.sum()
@@ -21,8 +21,8 @@ def test_nkl_basic():
 
 
 def test_nkl_known_result():
-    a = np.array([[1, 0, 0, 0]]).astype(np.float)
-    b = np.array([[0, 1, 0, 0]]).astype(np.float)
+    a = np.array([1, 0, 0, 0]).astype(np.float)
+    b = np.array([0, 1, 0, 0]).astype(np.float)
     c = a + b
     c = c / c.sum()
     assert_(-np.log(2) < nkl_metric(a, b, p_B=c, a=0.5) < 0.)
