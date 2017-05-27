@@ -1,22 +1,28 @@
 # -*- coding: utf-8 -*-
 # author: Flavio Martins
 # creation date: 1/5/2017
+import numpy as np
 cimport numpy as np
 import cython
 from cython.parallel cimport prange
 from libc.math cimport log
 
+
+DTYPE = np.float64
+ctypedef np.float64_t DTYPE_t
+
+
 @cython.cdivision(True)
-cdef inline double kl(double x, double y, double z) nogil:
+cdef inline DTYPE_t kl(DTYPE_t x, DTYPE_t y, DTYPE_t z) nogil:
     return x * log(y / z)
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.nonecheck(False)
-cpdef double nkl_dist(np.ndarray[np.double_t, ndim=1] v1, np.ndarray[np.double_t, ndim=1] v2,
-            np.ndarray[np.double_t, ndim=1] b, double a):
-    cdef int d, dim
-    cdef double xd, yd, bd, a_bd, pd, pc, agg
+cpdef DTYPE_t nkl_dist(DTYPE_t[::1] v1, DTYPE_t[::1] v2, DTYPE_t[::1] b, DTYPE_t a) nogil:
+    cdef Py_ssize_t d, dim
+    cdef DTYPE_t xd, yd, bd, a_bd, pd, pc, agg
     dim = v1.shape[0]
     agg = 0.
     for d in prange(dim, nogil=True):

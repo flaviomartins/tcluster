@@ -1,21 +1,28 @@
 # -*- coding: utf-8 -*-
 # author: Flavio Martins
 # creation date: 1/5/2017
+import numpy as np
 cimport numpy as np
 import cython
 from cython.parallel cimport prange
 from libc.math cimport log
 
+
+DTYPE = np.float64
+ctypedef np.float64_t DTYPE_t
+
+
 @cython.cdivision(True)
-cdef inline double kl(double x, double y) nogil:
+cdef inline DTYPE_t kl(DTYPE_t x, DTYPE_t y) nogil:
     return x * log(x / y)
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.nonecheck(False)
-cpdef double js_div(np.ndarray[np.double_t, ndim=1] v1, np.ndarray[np.double_t, ndim=1] v2):
-    cdef int d, dim
-    cdef double xd, yd, md, agg
+cpdef DTYPE_t js_div(DTYPE_t[::1] v1, DTYPE_t[::1] v2) nogil:
+    cdef Py_ssize_t d, dim
+    cdef DTYPE_t xd, yd, md, agg
     dim = v1.shape[0]
     agg = 0.
     for d in prange(dim, nogil=True):
