@@ -166,7 +166,8 @@ def _tolerance(X, tol):
 
 def k_means(X, n_clusters, init='k-means++', precompute_distances='auto',
             n_init=10, max_iter=300, verbose=False,
-            tol=1e-4, random_state=None, copy_x=True, n_jobs=1,
+            tol=1e-4, max_no_improvement=10,
+            random_state=None, copy_x=True, n_jobs=1,
             algorithm="auto", return_n_iter=False,
             metric='euclidean', metric_kwargs=None):
     """K-means clustering algorithm.
@@ -184,6 +185,13 @@ def k_means(X, n_clusters, init='k-means++', precompute_distances='auto',
 
     max_iter : int, optional, default 300
         Maximum number of iterations of the k-means algorithm to run.
+
+    max_no_improvement : int, default: 10
+        Control early stopping based on the consecutive number of mini
+        batches that does not yield an improvement on the smoothed inertia.
+
+        To disable convergence detection based on inertia, set
+        max_no_improvement to None.
 
     n_init : int, optional, default: 10
         Number of time the k-means algorithm will be run with different
@@ -374,6 +382,7 @@ def k_means(X, n_clusters, init='k-means++', precompute_distances='auto',
             labels, inertia, centers, n_iter_ = kmeans_single(
                 X, n_clusters, max_iter=max_iter, init=init, verbose=verbose,
                 precompute_distances=precompute_distances, tol=tol,
+                max_no_improvement=max_no_improvement,
                 x_squared_norms=x_squared_norms, random_state=random_state,
                 metric=metric, metric_kwargs=metric_kwargs)
             # determine if these results are the best so far
@@ -388,6 +397,7 @@ def k_means(X, n_clusters, init='k-means++', precompute_distances='auto',
         results = Parallel(n_jobs=n_jobs, verbose=0)(
             delayed(kmeans_single)(X, n_clusters, max_iter=max_iter, init=init,
                                    verbose=verbose, tol=tol,
+                                   max_no_improvement=max_no_improvement,
                                    precompute_distances=precompute_distances,
                                    x_squared_norms=x_squared_norms,
                                    # Change seed to ensure variety
@@ -417,6 +427,7 @@ def k_means(X, n_clusters, init='k-means++', precompute_distances='auto',
 def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                          verbose=False, x_squared_norms=None,
                          random_state=None, tol=1e-4,
+                         max_no_improvement=10,
                          precompute_distances=True,
                          metric='euclidean', metric_kwargs=None):
     """A single run of k-means, assumes preparation completed prior.
@@ -432,6 +443,13 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
 
     max_iter : int, optional, default 300
         Maximum number of iterations of the k-means algorithm to run.
+
+    max_no_improvement : int, default: 10
+        Control early stopping based on the consecutive number of mini
+        batches that does not yield an improvement on the smoothed inertia.
+
+        To disable convergence detection based on inertia, set
+        max_no_improvement to None.
 
     init : {'k-means++', 'random', or ndarray, or a callable}, optional
         Method for initialization, default to 'k-means++':
@@ -484,6 +502,7 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
         Number of iterations run.
     """
     random_state = check_random_state(random_state)
+    n_samples = X.shape[0]
 
     best_labels, best_inertia, best_centers, best_n_iter = None, None, None, None
     # init
@@ -495,6 +514,9 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
     # Allocate memory to store the distances for each sample to its
     # closer center for reallocation in case of ties
     distances = np.zeros(shape=(X.shape[0],), dtype=X.dtype)
+
+    # Empty context to be used inplace by the convergence check routine
+    convergence_context = {}
 
     # iterations
     for i in range(max_iter):
@@ -513,33 +535,107 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
         else:
             centers = _k_means._centers_dense(X, labels, n_clusters, distances)
 
-        if verbose:
-            print("Iteration %2d, inertia %.3f" % (i, inertia))
+        if metric in ['euclidean', 'cosine']:
+            if verbose:
+                print("Iteration %2d, inertia %.3f" % (i, inertia))
 
-        if best_inertia is None or inertia < best_inertia:
+            if best_inertia is None or inertia < best_inertia:
+                best_labels = labels.copy()
+                best_centers = centers.copy()
+                best_inertia = inertia
+                best_n_iter = i
+
+            center_shift_total = squared_norm(centers_old - centers)
+            if center_shift_total <= tol:
+                if verbose:
+                    print("Converged at iteration %d: "
+                          "center shift %e within tolerance %e"
+                          % (i, center_shift_total, tol))
+                break
+        else:
             best_labels = labels.copy()
             best_centers = centers.copy()
             best_inertia = inertia
             best_n_iter = i
+            # Monitor convergence and do early stopping if necessary
+            if _ewa_inertia_convergence(
+                    i, max_iter, n_samples,
+                    inertia, convergence_context,
+                    verbose=verbose, max_no_improvement=max_no_improvement):
+                break
 
-        center_shift_total = squared_norm(centers_old - centers)
-        if center_shift_total <= tol:
-            if verbose:
-                print("Converged at iteration %d: "
-                      "center shift %e within tolerance %e"
-                      % (i, center_shift_total, tol))
-            break
-
-    if center_shift_total > 0:
-        # rerun E-step in case of non-convergence so that predicted labels
-        # match cluster centers
-        best_labels, best_inertia = \
-            _labels_inertia(X, x_squared_norms, best_centers,
-                            precompute_distances=precompute_distances,
-                            distances=distances,
-                            metric=metric, metric_kwargs=metric_kwargs)
+    if metric in ['euclidean', 'cosine']:
+        if center_shift_total > 0:
+            # rerun E-step in case of non-convergence so that predicted labels
+            # match cluster centers
+            best_labels, best_inertia = \
+                _labels_inertia(X, x_squared_norms, best_centers,
+                                precompute_distances=precompute_distances,
+                                distances=distances,
+                                metric=metric, metric_kwargs=metric_kwargs)
 
     return best_labels, best_inertia, best_centers, best_n_iter
+
+
+def _ewa_inertia_convergence(iteration_idx, n_iter, n_samples,
+                             iteration_inertia, context, max_no_improvement=10, verbose=0):
+    """Helper function to encapsulate the early stopping logic"""
+    # Compute an Exponentially Weighted Average of the squared
+    # diff to monitor the convergence while discarding
+    # minibatch-local stochastic variability:
+    # https://en.wikipedia.org/wiki/Moving_average
+    ewa_inertia = context.get('ewa_inertia')
+    if ewa_inertia is None:
+        ewa_inertia = iteration_inertia
+    else:
+        # TODO: another way to set alpha based on n_iter and n_samples?
+        alpha = np.sqrt(n_iter) * 2.0 / n_iter
+        alpha = 1.0 if alpha > 1.0 else alpha
+        ewa_inertia = ewa_inertia * (1 - alpha) + iteration_inertia * alpha
+
+    # Log progress to be able to monitor convergence
+    if verbose:
+        progress_msg = (
+            'Iteration %d/%d:'
+            ' inertia: %f, ewa inertia: %f ' % (
+                iteration_idx + 1, n_iter, iteration_inertia,
+                ewa_inertia))
+        print(progress_msg)
+
+    # Early stopping heuristic due to lack of improvement on inertia
+    inertia_min = context.get('inertia_min')
+    no_improvement = context.get('no_improvement', 0)
+    if inertia_min is None or iteration_inertia < inertia_min:
+        no_improvement = 0
+        inertia_min = iteration_inertia
+    else:
+        no_improvement += 1
+
+    # Early stopping heuristic due to lack of improvement on smoothed inertia
+    ewa_inertia_min = context.get('ewa_inertia_min')
+    ewa_no_improvement = context.get('ewa_no_improvement', 0)
+    if ewa_inertia_min is None or ewa_inertia < ewa_inertia_min:
+        ewa_no_improvement = 0
+        ewa_inertia_min = ewa_inertia
+    else:
+        ewa_no_improvement += 1
+
+    if (max_no_improvement is not None
+        and (no_improvement >= max_no_improvement
+             or ewa_no_improvement >= max_no_improvement)):
+        if verbose:
+            print('Converged (lack of improvement in inertia)'
+                  ' at iteration %d/%d'
+                  % (iteration_idx + 1, n_iter))
+        return True
+
+    # update the convergence context to maintain state across successive calls:
+    context['inertia_min'] = inertia_min
+    context['ewa_inertia'] = ewa_inertia
+    context['ewa_inertia_min'] = ewa_inertia_min
+    context['no_improvement'] = no_improvement
+    context['ewa_no_improvement'] = ewa_no_improvement
+    return False
 
 
 def _centers(X, labels, n_clusters, distances):
@@ -751,6 +847,13 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
         Maximum number of iterations of the k-means algorithm for a
         single run.
 
+    max_no_improvement : int, default: 10
+        Control early stopping based on the consecutive number of mini
+        batches that does not yield an improvement on the smoothed inertia.
+
+        To disable convergence detection based on inertia, set
+        max_no_improvement to None.
+
     n_init : int, default: 10
         Number of time the k-means algorithm will be run with different
         centroid seeds. The final results will be the best output of
@@ -868,7 +971,8 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
     """
 
     def __init__(self, n_clusters=8, init='k-means++', n_init=10,
-                 max_iter=300, tol=1e-4, precompute_distances='auto',
+                 max_iter=300, tol=1e-4, max_no_improvement=10,
+                 precompute_distances='auto',
                  verbose=0, random_state=None, copy_x=True,
                  n_jobs=1, algorithm='auto',
                  metric='euclidean', metric_kwargs=None):
@@ -877,6 +981,7 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
         self.init = init
         self.max_iter = max_iter
         self.tol = tol
+        self.max_no_improvement = max_no_improvement
         self.precompute_distances = precompute_distances
         self.n_init = n_init
         self.verbose = verbose
@@ -922,7 +1027,8 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
                 X, n_clusters=self.n_clusters, init=self.init,
                 n_init=self.n_init, max_iter=self.max_iter, verbose=self.verbose,
                 precompute_distances=self.precompute_distances,
-                tol=self.tol, random_state=random_state, copy_x=self.copy_x,
+                tol=self.tol, max_no_improvement=self.max_no_improvement,
+                random_state=random_state, copy_x=self.copy_x,
                 n_jobs=self.n_jobs, algorithm=self.algorithm,
                 return_n_iter=True,
                 metric=self.metric, metric_kwargs=self.metric_kwargs)
