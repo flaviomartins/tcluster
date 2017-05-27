@@ -555,7 +555,7 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
         else:
             best_labels = labels.copy()
             best_centers = centers.copy()
-            best_inertia = inertia
+            best_inertia = convergence_context.get('ewa_inertia_min', inertia)
             best_n_iter = i
             # Monitor convergence and do early stopping if necessary
             if _ewa_inertia_convergence(
