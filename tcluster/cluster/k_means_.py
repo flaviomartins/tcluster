@@ -589,7 +589,7 @@ def _ewa_inertia_convergence(iteration_idx, n_iter, n_samples,
         ewa_inertia = iteration_inertia
     else:
         # TODO: another way to set alpha based on n_iter and n_samples?
-        alpha = np.sqrt(n_iter) * 2.0 / n_iter
+        alpha = np.sqrt(n_iter) * 4.0 / n_iter
         alpha = 1.0 if alpha > 1.0 else alpha
         ewa_inertia = ewa_inertia * (1 - alpha) + iteration_inertia * alpha
 
@@ -602,27 +602,17 @@ def _ewa_inertia_convergence(iteration_idx, n_iter, n_samples,
                 ewa_inertia))
         print(progress_msg)
 
-    # Early stopping heuristic due to lack of improvement on inertia
-    inertia_min = context.get('inertia_min')
+    # Early stopping heuristic due to lack of improvement on smoothed inertia
+    ewa_inertia_min = context.get('ewa_inertia_min')
     no_improvement = context.get('no_improvement', 0)
-    if inertia_min is None or iteration_inertia < inertia_min:
+    if ewa_inertia_min is None or ewa_inertia < ewa_inertia_min:
         no_improvement = 0
-        inertia_min = iteration_inertia
+        ewa_inertia_min = ewa_inertia
     else:
         no_improvement += 1
 
-    # Early stopping heuristic due to lack of improvement on smoothed inertia
-    ewa_inertia_min = context.get('ewa_inertia_min')
-    ewa_no_improvement = context.get('ewa_no_improvement', 0)
-    if ewa_inertia_min is None or ewa_inertia < ewa_inertia_min:
-        ewa_no_improvement = 0
-        ewa_inertia_min = ewa_inertia
-    else:
-        ewa_no_improvement += 1
-
     if (max_no_improvement is not None
-        and (no_improvement >= max_no_improvement
-             or ewa_no_improvement >= max_no_improvement)):
+        and no_improvement >= max_no_improvement):
         if verbose:
             print('Converged (lack of improvement in inertia)'
                   ' at iteration %d/%d'
@@ -630,11 +620,9 @@ def _ewa_inertia_convergence(iteration_idx, n_iter, n_samples,
         return True
 
     # update the convergence context to maintain state across successive calls:
-    context['inertia_min'] = inertia_min
     context['ewa_inertia'] = ewa_inertia
     context['ewa_inertia_min'] = ewa_inertia_min
     context['no_improvement'] = no_improvement
-    context['ewa_no_improvement'] = ewa_no_improvement
     return False
 
 
