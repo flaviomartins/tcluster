@@ -544,14 +544,6 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                 best_centers = centers.copy()
                 best_inertia = inertia
                 best_n_iter = i
-
-            center_shift_total = squared_norm(centers_old - centers)
-            if center_shift_total <= tol:
-                if verbose:
-                    print("Converged at iteration %d: "
-                          "center shift %e within tolerance %e"
-                          % (i, center_shift_total, tol))
-                break
         else:
             best_labels = labels.copy()
             best_centers = centers.copy()
@@ -563,6 +555,14 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                     inertia, convergence_context,
                     verbose=verbose, max_no_improvement=max_no_improvement):
                 break
+
+        center_shift_total = squared_norm(centers_old - centers)
+        if center_shift_total <= tol:
+            if verbose:
+                print("Converged at iteration %d: "
+                      "center shift %e within tolerance %e"
+                      % (i, center_shift_total, tol))
+            break
 
     if metric in ['euclidean', 'cosine']:
         if center_shift_total > 0:
@@ -589,7 +589,7 @@ def _ewa_inertia_convergence(iteration_idx, n_iter, n_samples,
         ewa_inertia = iteration_inertia
     else:
         # TODO: another way to set alpha based on n_iter and n_samples?
-        alpha = np.sqrt(n_iter) * 4.0 / n_iter
+        alpha = np.sqrt(n_iter) * 2.0 / n_iter
         alpha = 1.0 if alpha > 1.0 else alpha
         ewa_inertia = ewa_inertia * (1 - alpha) + iteration_inertia * alpha
 
