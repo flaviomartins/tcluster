@@ -249,6 +249,7 @@ elif opts.sample:
                       init_size=init_size, verbose=opts.verbose)
 else:
     km = KMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=opts.n_init,
+                max_no_improvement=1,
                 metric=opts.metric, metric_kwargs={'a': opts.a},
                 verbose=opts.verbose)
 

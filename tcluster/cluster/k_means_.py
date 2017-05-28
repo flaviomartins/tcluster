@@ -589,7 +589,7 @@ def _ewa_inertia_convergence(iteration_idx, n_iter, n_samples,
         ewa_inertia = iteration_inertia
     else:
         # TODO: another way to set alpha based on n_iter and n_samples?
-        alpha = np.sqrt(n_iter) * 2.0 / n_iter
+        alpha = float(n_samples + 1) / n_iter * 10.0 / (n_samples + 1)
         alpha = 1.0 if alpha > 1.0 else alpha
         ewa_inertia = ewa_inertia * (1 - alpha) + iteration_inertia * alpha
 
