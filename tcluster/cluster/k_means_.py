@@ -695,7 +695,7 @@ def _labels_inertia(X, x_squared_norms, centers,
         The resulting assignment
 
     inertia : float
-        Sum of distances of samples to their closest cluster center.
+        Sum of squared distances of samples to their closest cluster center.
     """
     n_samples = X.shape[0]
     # set the default value of centers to -1 to be able to detect any anomaly
@@ -918,7 +918,7 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
         Labels of each point
 
     inertia_ : float
-        Sum of distances of samples to their closest cluster center.
+        Sum of squared distances of samples to their closest cluster center.
 
     Examples
     --------
@@ -1010,6 +1010,9 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
         ----------
         X : array-like or sparse matrix, shape=(n_samples, n_features)
             Training instances to cluster.
+
+        y : Ignored
+
         """
         random_state = check_random_state(self.random_state)
         X = self._check_fit_data(X)
@@ -1037,6 +1040,8 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
         X : {array-like, sparse matrix}, shape = [n_samples, n_features]
             New data to transform.
 
+        u : Ignored
+
         Returns
         -------
         labels : array, shape [n_samples,]
@@ -1053,6 +1058,8 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
         ----------
         X : {array-like, sparse matrix}, shape = [n_samples, n_features]
             New data to transform.
+
+        y : Ignored
 
         Returns
         -------
@@ -1123,6 +1130,8 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
         ----------
         X : {array-like, sparse matrix}, shape = [n_samples, n_features]
             New data.
+
+        y : Ignored
 
         Returns
         -------
@@ -1195,7 +1204,7 @@ def _mini_batch_step(X, x_squared_norms, centers, counts,
     Returns
     -------
     inertia : float
-        Sum of distances of samples to their closest cluster center.
+        Sum of squared distances of samples to their closest cluster center.
 
     squared_diff : numpy array, shape (n_clusters,)
         Squared distances between previous and updated cluster centers.
@@ -1475,6 +1484,9 @@ class MiniBatchKMeans(KMeans):
         ----------
         X : array-like or sparse matrix, shape=(n_samples, n_features)
             Training instances to cluster.
+
+        y : Ignored
+
         """
         random_state = check_random_state(self.random_state)
         X = check_array(X, accept_sparse="csr", order='C',
@@ -1643,6 +1655,9 @@ class MiniBatchKMeans(KMeans):
         ----------
         X : array-like, shape = [n_samples, n_features]
             Coordinates of the data points to cluster.
+
+        y : Ignored
+
         """
 
         X = check_array(X, accept_sparse="csr")
