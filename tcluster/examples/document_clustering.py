@@ -24,12 +24,13 @@ Two feature extraction methods can be used in this example:
     model (the fit method does nothing). When IDF weighting is needed it can
     be added by pipelining its output to a TfidfTransformer instance.
 
-Two algorithms are demoed: random start k-means and sample k-means.
+Two algorithms are demoed: ordinary k-means and its more scalable cousin
+minibatch k-means.
 
 Additionally, latent semantic analysis can also be used to reduce dimensionality
-and discover latent patterns in the data. 
+and discover latent patterns in the data.
 
-It can be noted that k-means (and sample k-means) are very sensitive to
+It can be noted that k-means (and minibatch k-means) are very sensitive to
 feature scaling and that in this case the IDF weighting helps improve the
 quality of the clustering by quite a lot as measured against the "ground truth"
 provided by the class label assignments of the 20 newsgroups dataset.
@@ -128,13 +129,19 @@ op.add_option("--verbose",
 print(__doc__)
 op.print_help()
 
-(opts, args) = op.parse_args()
+
+def is_interactive():
+    return not hasattr(sys.modules['__main__'], '__file__')
+
+# work-around for Jupyter notebook and IPython console
+argv = [] if is_interactive() else sys.argv[1:]
+(opts, args) = op.parse_args(argv)
 if len(args) > 0:
     op.error("this script takes no arguments.")
     sys.exit(1)
 
 
-###############################################################################
+# #############################################################################
 # Load some categories from the training set
 categories = [
     'alt.atheism',
@@ -235,12 +242,12 @@ else:
     init_size = int(max(opts.init_size, 10 * true_k))
 
 
-###############################################################################
+# #############################################################################
 # Do the actual clustering
 
 if opts.minibatch:
     km = MiniBatchKMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=opts.n_init,
-                         max_no_improvement=opts.max_iter, compute_labels=True,
+                         max_no_improvement=opts.max_iter / 10, compute_labels=True,
                          metric=opts.metric, metric_kwargs={'a': opts.a},
                          init_size=init_size, batch_size=batch_size, verbose=opts.verbose)
 elif opts.sample:
@@ -249,7 +256,7 @@ elif opts.sample:
                       init_size=init_size, verbose=opts.verbose)
 else:
     km = KMeans(n_clusters=true_k, init='random', max_iter=opts.max_iter, n_init=opts.n_init,
-                max_no_improvement=2,
+                max_no_improvement=opts.max_iter / 10,
                 metric=opts.metric, metric_kwargs={'a': opts.a},
                 verbose=opts.verbose)
 
