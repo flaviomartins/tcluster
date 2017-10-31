@@ -1793,8 +1793,9 @@ def nearestcentres(X, centers, metric='euclidean', p=2, a=.1, precomputed_centre
             centers_mean = centers.mean(axis=0)
         else:
             centers_mean = precomputed_centres_mean
-        centers_mean = as_float_array(centers_mean, copy=True)
-        D = pairwise_distances_sparse(X, centers, p_B=centers_mean, a=a, metric=nkl_metric)
+        metric_kwargs = {'p_B': as_float_array(centers_mean, copy=True)}
+        D = pairwise_distances_sparse(
+            X=X, Y=centers, metric=nkl_metric, metric_kwargs=metric_kwargs)
     else:
         D = pairwise_distances_sparse(X, centers, metric=metric, p=p)  # |X| x |centres|
     return D.argmin(axis=1)
