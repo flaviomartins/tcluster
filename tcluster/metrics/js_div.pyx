@@ -12,6 +12,12 @@ DTYPE = np.float64
 ctypedef np.float64_t DTYPE_t
 
 
+cdef double clip(double x, double low) nogil:
+    if x < low:
+        return low
+    return x
+
+
 @cython.cdivision(True)
 cdef inline DTYPE_t kl(DTYPE_t x, DTYPE_t y) nogil:
     return x * log(x / y)
@@ -36,4 +42,4 @@ cpdef DTYPE_t js_div(DTYPE_t[::1] v1, DTYPE_t[::1] v2) nogil:
             agg += kl(xd, md)
         if yd > 0.:
             agg += kl(yd, md)
-    return agg
+    return clip(agg, 0)
