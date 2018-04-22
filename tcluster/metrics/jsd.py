@@ -65,4 +65,4 @@ def np_jensen_shannon_divergence(X, Y):
     """
     X, Y = np.atleast_2d(X), np.atleast_2d(Y)
     m = .5 * (X + Y)
-    return 0.5 * np.sum(rel_entr(X, m) + rel_entr(Y, m), axis=1)
+    return .5 * np.sum(rel_entr(X, m) + rel_entr(Y, m), axis=1)
