@@ -823,7 +823,7 @@ def _labels_inertia(X, x_squared_norms, centers,
                                                     centers, distances,
                                                     metric, metric_kwargs)
     else:
-        if precompute_distances:
+        if metric != 'euclidean' or precompute_distances:
             return _labels_inertia_precompute_dense(X, x_squared_norms,
                                                     centers, distances,
                                                     metric, metric_kwargs)
