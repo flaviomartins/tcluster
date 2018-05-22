@@ -1879,5 +1879,5 @@ def nearestcentres(X, centers, metric='euclidean', p=2, a=.1, precomputed_centre
         D = pairwise_distances_sparse(
             X=X, Y=centers, metric=nkl_metric, metric_kwargs=metric_kwargs)
     else:
-        D = pairwise_distances_sparse(X, centers, metric=metric, p=p)  # |X| x |centres|
+        D = pairwise_distances_sparse(X, centers, metric=metric)  # |X| x |centres|
     return D.argmin(axis=1)
