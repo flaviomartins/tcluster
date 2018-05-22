@@ -1863,7 +1863,7 @@ def pairwise_distances_sparse(X, Y, metric, metric_kwargs=None):
     return d
 
 
-def nearestcentres(X, centers, metric='euclidean', p=2, a=.1, precomputed_centres_mean=None):
+def nearestcenters(X, centers, metric='euclidean', p=2, a=.1, precomputed_centers_mean=None):
     """ each X -> nearest centre, any metric
             euclidean2 (~ withinss) is more sensitive to outliers,
             cityblock (manhattan, L1) less sensitive
@@ -1871,13 +1871,13 @@ def nearestcentres(X, centers, metric='euclidean', p=2, a=.1, precomputed_centre
     if metric in ['jsd', 'jensen-shannon']:
         D = pairwise_distances_sparse(X, centers, metric=jensen_shannon_divergence)
     elif metric in ['nkl', 'negative-kullback-leibler']:
-        if precomputed_centres_mean is None:
+        if precomputed_centers_mean is None:
             centers_mean = centers.mean(axis=0)
         else:
-            centers_mean = precomputed_centres_mean
+            centers_mean = precomputed_centers_mean
         metric_kwargs = {'p_B': as_float_array(centers_mean, copy=True)}
         D = pairwise_distances_sparse(
             X=X, Y=centers, metric=nkl_metric, metric_kwargs=metric_kwargs)
     else:
-        D = pairwise_distances_sparse(X, centers, metric=metric)  # |X| x |centres|
+        D = pairwise_distances_sparse(X, centers, metric=metric)  # |X| x |centers|
     return D.argmin(axis=1)
