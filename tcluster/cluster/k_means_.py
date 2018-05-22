@@ -578,11 +578,14 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                             metric=metric, metric_kwargs=metric_kwargs)
 
         # computation of the means is also called the M-step of EM
-        if sp.issparse(X):
-            centers = _k_means._centers_sparse(X, labels, n_clusters,
-                                               distances)
+        if metric in ['euclidean', 'cosine']:
+            if sp.issparse(X):
+                centers = _k_means._centers_sparse(X, labels, n_clusters,
+                                                   distances)
+            else:
+                centers = _k_means._centers_dense(X, labels, n_clusters, distances)
         else:
-            centers = _k_means._centers_dense(X, labels, n_clusters, distances)
+            centers = _centers(X, labels, n_clusters, distances)
 
         if metric in ['euclidean', 'cosine']:
             if verbose:
@@ -627,6 +630,7 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
 
 
     return best_labels, best_inertia, best_centers, best_n_iter
+
 
 def _ewa_inertia_convergence(iteration_idx, n_iter, tol,
                              n_samples, centers_squared_diff, iteration_inertia,
