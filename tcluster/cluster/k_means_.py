@@ -593,25 +593,27 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                 best_centers = centers.copy()
                 best_inertia = inertia
                 best_n_iter = i
+
+                center_shift_total = squared_norm(centers_old - centers)
+                if center_shift_total <= tol:
+                    if verbose:
+                        print("Converged at iteration %d: "
+                              "center shift %e within tolerance %e"
+                              % (i, center_shift_total, tol))
+                    break
         else:
             best_labels = labels.copy()
             best_centers = centers.copy()
             best_inertia = convergence_context.get('ewa_inertia_min', inertia)
             best_n_iter = i
-            # Monitor convergence and do early stopping if necessary
-            if _ewa_inertia_convergence(
-                    i, max_iter, n_samples,
-                    inertia, convergence_context,
-                    verbose=verbose, max_no_improvement=max_no_improvement):
-                break
 
-        center_shift_total = squared_norm(centers_old - centers)
-        if center_shift_total <= tol:
-            if verbose:
-                print("Converged at iteration %d: "
-                      "center shift %e within tolerance %e"
-                      % (i, center_shift_total, tol))
-            break
+            # Monitor convergence and do early stopping if necessary
+            center_shift_total = squared_norm(centers_old - centers)
+            if _ewa_inertia_convergence(
+                    i, max_iter, tol, n_samples,
+                    center_shift_total, inertia, convergence_context,
+                    max_no_improvement=max_no_improvement, verbose=verbose):
+                break
 
     if metric in ['euclidean', 'cosine']:
         if center_shift_total > 0:
@@ -626,20 +628,24 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
 
     return best_labels, best_inertia, best_centers, best_n_iter
 
-def _ewa_inertia_convergence(iteration_idx, n_iter, n_samples,
-                             iteration_inertia, context, max_no_improvement=10, verbose=0):
+def _ewa_inertia_convergence(iteration_idx, n_iter, tol,
+                             n_samples, centers_squared_diff, iteration_inertia,
+                             context, max_no_improvement=10, verbose=0):
     """Helper function to encapsulate the early stopping logic"""
     # Compute an Exponentially Weighted Average of the squared
     # diff to monitor the convergence while discarding
     # minibatch-local stochastic variability:
     # https://en.wikipedia.org/wiki/Moving_average
+    ewa_diff = context.get('ewa_diff')
     ewa_inertia = context.get('ewa_inertia')
-    if ewa_inertia is None:
+    if ewa_diff is None:
+        ewa_diff = centers_squared_diff
         ewa_inertia = iteration_inertia
     else:
         # TODO: another way to set alpha based on n_iter and n_samples?
-        alpha = float(n_samples + 1) / n_iter * 10.0 / (n_samples + 1)
+        alpha = float(n_samples) * 2.0 / (n_samples + 1)
         alpha = 1.0 if alpha > 1.0 else alpha
+        ewa_diff = ewa_diff * (1 - alpha) + centers_squared_diff * alpha
         ewa_inertia = ewa_inertia * (1 - alpha) + iteration_inertia * alpha
 
     # Log progress to be able to monitor convergence
@@ -650,6 +656,14 @@ def _ewa_inertia_convergence(iteration_idx, n_iter, n_samples,
                 iteration_idx + 1, n_iter, iteration_inertia,
                 ewa_inertia))
         print(progress_msg)
+
+    # Early stopping based on absolute tolerance on squared change of
+    # centers position (using EWA smoothing)
+    if tol > 0.0 and ewa_diff <= tol:
+        if verbose:
+            print('Converged (small centers change) at iteration %d/%d'
+                  % (iteration_idx + 1, n_iter))
+        return True
 
     # Early stopping heuristic due to lack of improvement on smoothed inertia
     ewa_inertia_min = context.get('ewa_inertia_min')
@@ -669,6 +683,7 @@ def _ewa_inertia_convergence(iteration_idx, n_iter, n_samples,
         return True
 
     # update the convergence context to maintain state across successive calls:
+    context['ewa_diff'] = ewa_diff
     context['ewa_inertia'] = ewa_inertia
     context['ewa_inertia_min'] = ewa_inertia_min
     context['no_improvement'] = no_improvement
