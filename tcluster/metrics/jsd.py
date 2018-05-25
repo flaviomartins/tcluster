@@ -9,7 +9,67 @@ pyximport.install(setup_args={"include_dirs": np.get_include()},
 from .js_div import js_div
 
 
-def jensen_shannon_divergence(X, Y, base=None):
+def jensenshannon(p, q, base=None):
+    """
+    Compute the Jensen-Shannon distance (metric) between
+    two 1-D probability arrays. This is the square root
+    of the Jensen-Shannon divergence.
+
+    The Jensen-Shannon distance between two probability
+    vectors `p` and `q` is defined as,
+
+    .. math::
+
+       \\sqrt{\\frac{D(p \\parallel m) + D(q \\parallel m)}{2}}
+
+    where :math:`m` is the pointwise mean of :math:`p` and :math:`q`
+    and :math:`D` is the Kullback-Leibler divergence.
+
+    This routine will normalize `p` and `q` if they don't sum to 1.0.
+
+    Parameters
+    ----------
+    p : (N,) array_like
+        left probability vector
+    q : (N,) array_like
+        right probability vector
+    base : double, optional
+        the base of the logarithm used to compute the output
+        if not given, then the routine uses the default base of
+        scipy.stats.entropy.
+
+    Returns
+    -------
+    js : double
+        The Jensen-Shannon distance between `p` and `q`
+
+    .. versionadded:: 1.0.2
+
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0)
+    1.0
+    >>> distance.jensenshannon([1.0, 0.0], [0.5, 0.5])
+    0.46450140402245893
+    >>> distance.jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0])
+    0.0
+
+    """
+    p = np.asarray(p)
+    q = np.asarray(q)
+    p = p / np.sum(p, axis=0)
+    q = q / np.sum(q, axis=0)
+    m = (p + q) / 2.0
+    left = rel_entr(p, m)
+    right = rel_entr(q, m)
+    js = np.sum(left, axis=0) + np.sum(right, axis=0)
+    if base is not None:
+        js /= np.log(base)
+    return np.sqrt(js / 2.0)
+
+
+def jensenshannon_divergence(X, Y, base=None):
     """Compute Jensen-Shannon Divergence
     Parameters
     ----------
@@ -31,7 +91,7 @@ def jensen_shannon_divergence(X, Y, base=None):
     return js / 2.0
 
 
-def jensen_shannon_distance(X, Y, base=None):
+def jensenshannon_distance(X, Y, base=None):
     """Compute Jensen-Shannon Distance
     Parameters
     ----------
@@ -53,7 +113,7 @@ def jensen_shannon_distance(X, Y, base=None):
     return np.sqrt(js / 2.0)
 
 
-def np_jensen_shannon_divergence(X, Y, base=None):
+def np_jensenshannon_divergence(X, Y, base=None):
     """Compute Jensen-Shannon Divergence
     Parameters
     ----------
@@ -77,5 +137,5 @@ def np_jensen_shannon_divergence(X, Y, base=None):
     return .5 * js
 
 
-def np_jensen_shannon_distance(X, Y, base=None):
-    return np.sqrt(np_jensen_shannon_divergence(X, Y, base))
+def np_jensenshannon_distance(X, Y, base=None):
+    return np.sqrt(np_jensenshannon_divergence(X, Y, base))
