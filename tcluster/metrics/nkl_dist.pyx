@@ -19,7 +19,7 @@ cdef inline DOUBLE kl(DOUBLE x, DOUBLE y, DOUBLE z) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.nonecheck(False)
-cpdef DOUBLE nkl_dist(DOUBLE[::1] v1, DOUBLE[::1] v2, DOUBLE[::1] b, DOUBLE a) nogil:
+cpdef DOUBLE nkl_distance(DOUBLE[::1] v1, DOUBLE[::1] v2, DOUBLE[::1] b, DOUBLE a) nogil:
     cdef Py_ssize_t d, dim
     cdef DOUBLE xd, yd, bd, a_bd, pd, pc, agg
     dim = v1.shape[0]

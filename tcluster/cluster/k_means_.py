@@ -42,7 +42,7 @@ from sklearn.cluster._k_means_elkan import k_means_elkan
 
 
 from ..metrics import jensenshannon_distance
-from ..metrics import nkl_metric
+from ..metrics import nkl_distance
 
 
 ###############################################################################
@@ -770,7 +770,7 @@ def _labels_inertia_precompute_dense(X, x_squared_norms, centers, distances,
         if metric_kwargs is not None:
             nkl_kwargs.update(metric_kwargs)
         D = pairwise_distances_sparse(
-            X=X, Y=centers, metric=nkl_metric, metric_kwargs=nkl_kwargs)
+            X=X, Y=centers, metric=nkl_distance, metric_kwargs=nkl_kwargs)
         labels = D.argmin(axis=1)
         mindist = D[np.arange(n_samples), labels]
     else:
@@ -1892,7 +1892,7 @@ def nearestcenters(X, centers, metric='euclidean', p=2, a=.1, precomputed_center
             centers_mean = precomputed_centers_mean
         metric_kwargs = {'p_B': as_float_array(centers_mean, copy=True)}
         D = pairwise_distances_sparse(
-            X=X, Y=centers, metric=nkl_metric, metric_kwargs=metric_kwargs)
+            X=X, Y=centers, metric=nkl_distance, metric_kwargs=metric_kwargs)
     else:
         D = pairwise_distances_sparse(X, centers, metric=metric)  # |X| x |centers|
     return D.argmin(axis=1)
