@@ -8,21 +8,20 @@ from cython.parallel cimport prange
 from libc.math cimport log
 
 
-DTYPE = np.float64
-ctypedef np.float64_t DTYPE_t
+ctypedef np.float64_t DOUBLE
 
 
 @cython.cdivision(True)
-cdef inline DTYPE_t kl(DTYPE_t x, DTYPE_t y, DTYPE_t z) nogil:
+cdef inline DOUBLE kl(DOUBLE x, DOUBLE y, DOUBLE z) nogil:
     return x * log(y / z)
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.nonecheck(False)
-cpdef DTYPE_t nkl_dist(DTYPE_t[::1] v1, DTYPE_t[::1] v2, DTYPE_t[::1] b, DTYPE_t a) nogil:
+cpdef DOUBLE nkl_dist(DOUBLE[::1] v1, DOUBLE[::1] v2, DOUBLE[::1] b, DOUBLE a) nogil:
     cdef Py_ssize_t d, dim
-    cdef DTYPE_t xd, yd, bd, a_bd, pd, pc, agg
+    cdef DOUBLE xd, yd, bd, a_bd, pd, pc, agg
     dim = v1.shape[0]
     agg = 0.
     for d in prange(dim, nogil=True):
