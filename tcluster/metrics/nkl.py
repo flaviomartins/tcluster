@@ -9,7 +9,7 @@ pyximport.install(setup_args={"include_dirs": np.get_include()},
 from .nkl_dist import nkl_dist
 
 
-def nkl_metric(X, Y, p_B=None, a=0.1):
+def nkl_metric(X, Y, p_B=None, a=0.1, base=None):
     """Compute Negative Kullback-Liebler distance metric
     Parameters
     ----------
@@ -30,10 +30,13 @@ def nkl_metric(X, Y, p_B=None, a=0.1):
     entropy : function
         Computes entropy and K-L divergence
     """
-    return nkl_dist(X, Y, p_B, a)
+    nkl = nkl_dist(X, Y, p_B, a)
+    if base is not None:
+        nkl /= np.log(base)
+    return nkl
 
 
-def np_nkl_metric(X, Y, p_B=None, a=0.1):
+def np_nkl_metric(X, Y, p_B=None, a=0.1, base=None):
     """Compute Negative Kullback-Liebler metric
     Parameters
     ----------
@@ -63,7 +66,10 @@ def np_nkl_metric(X, Y, p_B=None, a=0.1):
         agg = xlogy(p_C, a_p_B/p_D) + xlogy(p_D, a_p_B/p_C)
         agg[~np.isfinite(agg)] = 0
 
-    return np.sum(agg, axis=1)
+    nkl = np.sum(agg, axis=1)
+    if base is not None:
+        nkl /= np.log(base)
+    return nkl
 
 
 def nkl_transform(X, a=0.1):
