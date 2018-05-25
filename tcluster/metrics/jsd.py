@@ -6,7 +6,6 @@ from scipy.special import rel_entr
 import pyximport
 pyximport.install(setup_args={"include_dirs": np.get_include()},
                   reload_support=True)
-from .js_div import js_div
 
 
 def jensenshannon(p, q, base=None):
@@ -64,50 +63,6 @@ def jensenshannon(p, q, base=None):
     left = rel_entr(p, m)
     right = rel_entr(q, m)
     js = np.sum(left, axis=0) + np.sum(right, axis=0)
-    if base is not None:
-        js /= np.log(base)
-    return np.sqrt(js / 2.0)
-
-
-def jensenshannon_divergence(X, Y, base=None):
-    """Compute Jensen-Shannon Divergence
-    Parameters
-    ----------
-    X : array-like
-        possibly unnormalized distribution.
-    Y : array-like
-        possibly unnormalized distribution. Must be of same shape as ``X``.
-    Returns
-    -------
-    j : float
-    See Also
-    --------
-    entropy : function
-        Computes entropy and K-L divergence
-    """
-    js = js_div(X, Y)
-    if base is not None:
-        js /= np.log(base)
-    return js / 2.0
-
-
-def jensenshannon_distance(X, Y, base=None):
-    """Compute Jensen-Shannon Distance
-    Parameters
-    ----------
-    X : array-like
-        possibly unnormalized distribution.
-    Y : array-like
-        possibly unnormalized distribution. Must be of same shape as ``X``.
-    Returns
-    -------
-    j : float
-    See Also
-    --------
-    jensen_shannon_divergence : function
-        Computes Jensen-Shannon Divergence 
-    """
-    js = js_div(X, Y)
     if base is not None:
         js /= np.log(base)
     return np.sqrt(js / 2.0)
