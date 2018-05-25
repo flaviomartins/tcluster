@@ -41,7 +41,7 @@ from sklearn.cluster import _k_means
 from sklearn.cluster._k_means_elkan import k_means_elkan
 
 
-from ..metrics import jensen_shannon_divergence
+from ..metrics import jensenshannon_distance
 from ..metrics import nkl_metric
 
 
@@ -759,9 +759,9 @@ def _labels_inertia_precompute_dense(X, x_squared_norms, centers, distances,
     if metric == 'euclidean':
         labels, mindist = pairwise_distances_argmin_min(
             X=X, Y=centers, metric='euclidean', metric_kwargs={'squared': True})
-    elif metric in ['jsd', 'jensen-shannon']:
+    elif metric in ['jsd', 'jensenshannon']:
         D = pairwise_distances_sparse(
-            X=X, Y=centers, metric=jensen_shannon_divergence)
+            X=X, Y=centers, metric=jensenshannon_distance)
         labels = D.argmin(axis=1)
         mindist = D[np.arange(n_samples), labels]
     elif metric in ['nkl', 'negative-kullback-leibler']:
@@ -1396,7 +1396,7 @@ def _mini_batch_convergence(model, iteration_idx, n_iter, tol,
     ewa_inertia = context.get('ewa_inertia')
     if ewa_diff is None:
         ewa_diff = centers_squared_diff
-        ewa_inertia = batch_inertia
+        ewa_inertia = batch_inertia * 2.0
     else:
         alpha = float(model.batch_size) * 2.0 / (n_samples + 1)
         alpha = 1.0 if alpha > 1.0 else alpha
@@ -1883,8 +1883,8 @@ def nearestcenters(X, centers, metric='euclidean', p=2, a=.1, precomputed_center
             euclidean2 (~ withinss) is more sensitive to outliers,
             cityblock (manhattan, L1) less sensitive
     """
-    if metric in ['jsd', 'jensen-shannon']:
-        D = pairwise_distances_sparse(X, centers, metric=jensen_shannon_divergence)
+    if metric in ['jsd', 'jensenshannon']:
+        D = pairwise_distances_sparse(X, centers, metric=jensenshannon_distance)
     elif metric in ['nkl', 'negative-kullback-leibler']:
         if precomputed_centers_mean is None:
             centers_mean = centers.mean(axis=0)
