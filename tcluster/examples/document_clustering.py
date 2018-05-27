@@ -68,6 +68,8 @@ from sklearn import metrics
 from tcluster.cluster import KMeans, SampleKMeans, MiniBatchKMeans
 from tcluster.metrics import nkl_transform, purity_score
 
+from gensim.models import KeyedVectors
+
 import logging
 from optparse import OptionParser
 import sys
@@ -101,6 +103,9 @@ op.add_option("--no-idf",
 op.add_option("--use-hashing",
               action="store_true", default=False,
               help="Use a hashing feature vectorizer")
+op.add_option("--use-embeddings", dest="embedding_model",
+              type="str", default=None,
+              help="Use document vectors based on embeddings.")
 op.add_option("--max-iter", type=int, default=50,
               help="Maximum number of iterations")
 op.add_option("--n-init", type=int, default=1,
@@ -203,12 +208,47 @@ if opts.use_hashing:
 else:
     vectorizer = TfidfVectorizer(max_df=0.5, max_features=opts.n_features,
                                  min_df=2, stop_words='english',
-                                 use_idf=opts.use_idf, norm=opts.norm)
+                                 use_idf=opts.use_idf, norm=opts.norm if not opts.embedding_model else None)
 X = vectorizer.fit_transform(dataset.data)
 
 print("done in %fs" % (time() - t0))
 print("n_samples: %d, n_features: %d" % X.shape)
 print()
+
+n_samples = X.shape[0]
+terms = vectorizer.get_feature_names()
+
+
+def get_doc_vector(doc, a=0.001):
+    doc_word_vectors = np.empty((0, model.vector_size))
+    rows, cols = np.nonzero(X[doc])
+    for col in cols:
+        w = terms[col]
+        if w in model.wv.vocab:
+            wv = model.wv[w]
+            sif_weight = a / (a + model.wv.vocab[w].count / float(total_freq))
+            tfidf = X[doc, col]
+            tfidf_sif = tfidf * sif_weight
+            doc_word_vectors = np.vstack([doc_word_vectors, tfidf_sif * wv])
+
+    return doc_word_vectors.sum(axis=0) if doc_word_vectors.shape[0] > 0 else np.zeros((1, model.vector_size))
+
+
+if opts.embedding_model:
+    if opts.embedding_model.endswith('.bin'):
+        model = KeyedVectors.load_word2vec_format(opts.embedding_model, binary=True)
+    else:
+        model = KeyedVectors.load_word2vec_format(opts.embedding_model)
+    total_freq = 0
+    for w in model.wv.vocab:
+        total_freq += model.wv.vocab[w].count
+
+    data = np.empty((n_samples, model.vector_size))
+    for doc in range(n_samples):
+        doc_vector = get_doc_vector(doc)
+        data[doc] = doc_vector
+
+    X = data
 
 if opts.n_components:
     print("Performing dimensionality reduction using LSA")
@@ -292,9 +332,16 @@ if not opts.use_hashing:
     else:
         order_centroids = cluster_centers_.argsort()[:, ::-1]
 
-    terms = vectorizer.get_feature_names()
-    for i in range(true_k):
-        print("Cluster %d:" % i, end='')
-        for ind in order_centroids[i, :10]:
-            print(' %s' % terms[ind], end='')
+    if opts.embedding_model:
+        for i in range(true_k):
+            print("Cluster %d:" % i, end='')
+            for m in model.most_similar(positive=[cluster_centers_[i]], topn=10):
+                print('%s' % m[0], end='')
+            print()
+    else:
+        terms = vectorizer.get_feature_names()
+        for i in range(true_k):
+            print("Cluster %d:" % i, end='')
+            for ind in order_centroids[i, :10]:
+                print(' %s' % terms[ind], end='')
         print()
