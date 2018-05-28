@@ -335,8 +335,15 @@ if not opts.use_hashing:
     if opts.embedding_model:
         for i in range(true_k):
             print("Cluster %d:" % i, end='')
-            for m in model.most_similar(positive=[cluster_centers_[i]], topn=10):
-                print(' %s' % m[0], end='')
+            most_similar = model.most_similar(positive=[cluster_centers_[i]], topn=1000)
+            itfs = np.zeros(len(most_similar))
+            for j, m in enumerate(most_similar):
+                w = m[0]
+                itf = float(total_freq) / model.wv.vocab[w].count
+                itfs[j] = itf
+            sortw = itfs.argsort(axis=0)[::-1]
+            for i in range(10):
+                print(' %s' % most_similar[sortw[i]][0], end='')
             print()
     else:
         terms = vectorizer.get_feature_names()
