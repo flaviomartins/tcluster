@@ -93,9 +93,9 @@ op.add_option("--minibatch",
 op.add_option("--sample",
               action="store_true", dest="sample", default=False,
               help="Use k-means sample algorithm.")
-op.add_option("--batch-size", type=float, default=.01,
+op.add_option("--batch-size", type=float, default=200,
               help="Batch size for k-means minibatch algorithm.")
-op.add_option("--init-size", type=float, default=.03,
+op.add_option("--init-size", type=float, default=.1,
               help="Number of samples for k-means algorithm training phase.")
 op.add_option("--no-idf",
               action="store_false", dest="use_idf", default=True,
