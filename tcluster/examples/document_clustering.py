@@ -336,7 +336,7 @@ if not opts.use_hashing:
         for i in range(true_k):
             print("Cluster %d:" % i, end='')
             for m in model.most_similar(positive=[cluster_centers_[i]], topn=10):
-                print('%s' % m[0], end='')
+                print(' %s' % m[0], end='')
             print()
     else:
         terms = vectorizer.get_feature_names()
