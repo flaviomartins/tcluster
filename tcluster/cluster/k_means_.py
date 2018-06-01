@@ -119,7 +119,7 @@ def _k_init(X, n_clusters, x_squared_norms, random_state, n_local_trials=None,
 
     centers = np.empty((n_clusters, n_features), dtype=X.dtype)
 
-    if metric in ['euclidean', 'cosine']:
+    if metric == 'euclidean':
         assert x_squared_norms is not None, 'x_squared_norms None in _k_init'
 
     # Set the number of local seeding trials if none is given
@@ -409,7 +409,7 @@ def k_means(X, n_clusters, init='k-means++', precompute_distances='auto',
 
     # precompute squared norms of data points
     x_squared_norms = None
-    if metric in ['euclidean', 'cosine']:
+    if metric == 'euclidean':
         x_squared_norms = row_norms(X, squared=True)
 
     best_labels, best_inertia, best_centers = None, None, None
@@ -1794,13 +1794,16 @@ class MiniBatchKMeans(KMeans):
         """
         if self.verbose:
             print('Computing label assignment and total inertia')
-        x_squared_norms = None
+        slices = gen_batches(X.shape[0], self.batch_size)
         if metric == 'euclidean':
             x_squared_norms = row_norms(X, squared=True)
-        slices = gen_batches(X.shape[0], self.batch_size)
-        results = [_labels_inertia(X[s], x_squared_norms[s],
-                                   self.cluster_centers_,
-                                   metric=metric, metric_kwargs=metric_kwargs) for s in slices]
+            results = [_labels_inertia(X[s], x_squared_norms[s],
+                                       self.cluster_centers_,
+                                       metric=metric, metric_kwargs=metric_kwargs) for s in slices]
+        else:
+            results = [_labels_inertia(X[s], None,
+                                       self.cluster_centers_,
+                                       metric=metric, metric_kwargs=metric_kwargs) for s in slices]
         labels, inertia = zip(*results)
         return np.hstack(labels), np.sum(inertia)
 
