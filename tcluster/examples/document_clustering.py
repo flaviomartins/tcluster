@@ -216,7 +216,6 @@ print("n_samples: %d, n_features: %d" % X.shape)
 print()
 
 n_samples = X.shape[0]
-terms = vectorizer.get_feature_names()
 
 
 def get_doc_vector(doc, a=0.001):
@@ -235,6 +234,7 @@ def get_doc_vector(doc, a=0.001):
 
 
 if opts.embedding_model:
+    terms = vectorizer.get_feature_names()
     if opts.embedding_model.endswith('.bin'):
         model = KeyedVectors.load_word2vec_format(opts.embedding_model, binary=True)
     else:
