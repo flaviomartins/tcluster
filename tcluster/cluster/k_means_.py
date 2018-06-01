@@ -1794,7 +1794,9 @@ class MiniBatchKMeans(KMeans):
         """
         if self.verbose:
             print('Computing label assignment and total inertia')
-        x_squared_norms = row_norms(X, squared=True)
+        x_squared_norms = None
+        if metric == 'euclidean':
+            x_squared_norms = row_norms(X, squared=True)
         slices = gen_batches(X.shape[0], self.batch_size)
         results = [_labels_inertia(X[s], x_squared_norms[s],
                                    self.cluster_centers_,
@@ -1823,7 +1825,9 @@ class MiniBatchKMeans(KMeans):
         if n_samples == 0:
             return self
 
-        x_squared_norms = row_norms(X, squared=True)
+        x_squared_norms = None
+        if self.metric == 'euclidean':
+            x_squared_norms = row_norms(X, squared=True)
         self.random_state_ = getattr(self, "random_state_",
                                      check_random_state(self.random_state))
         if (not hasattr(self, 'counts_')
