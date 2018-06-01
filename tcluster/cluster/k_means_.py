@@ -635,13 +635,13 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
                 best_inertia = inertia
                 best_n_iter = i
 
-                center_shift_total = squared_norm(centers_old - centers)
-                if center_shift_total <= tol:
-                    if verbose:
-                        print("Converged at iteration %d: "
-                              "center shift %e within tolerance %e"
-                              % (i, center_shift_total, tol))
-                    break
+            center_shift_total = squared_norm(centers_old - centers)
+            if center_shift_total <= tol:
+                if verbose:
+                    print("Converged at iteration %d: "
+                          "center shift %e within tolerance %e"
+                          % (i, center_shift_total, tol))
+                break
         else:
             best_labels = labels.copy()
             best_centers = centers.copy()
