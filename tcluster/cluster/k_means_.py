@@ -503,7 +503,8 @@ def _kmeans_single_elkan(X, n_clusters, max_iter=300, init='k-means++',
         x_squared_norms = row_norms(X, squared=True)
     # init
     centers = _init_centroids(X, n_clusters, init, random_state=random_state,
-                              x_squared_norms=x_squared_norms)
+                              x_squared_norms=x_squared_norms,
+                              metric=metric, metric_kwargs=metric_kwargs)
     centers = np.ascontiguousarray(centers)
     if verbose:
         print('Initialization complete')
@@ -595,7 +596,8 @@ def _kmeans_single_lloyd(X, n_clusters, max_iter=300, init='k-means++',
     best_labels, best_inertia, best_centers, best_n_iter = None, None, None, None
     # init
     centers = _init_centroids(X, n_clusters, init, random_state=random_state,
-                              x_squared_norms=x_squared_norms)
+                              x_squared_norms=x_squared_norms,
+                              metric=metric, metric_kwargs=metric_kwargs)
     if verbose:
         print("Initialization complete")
 
@@ -887,7 +889,7 @@ def _labels_inertia(X, x_squared_norms, centers,
 
 
 def _init_centroids(X, k, init, random_state=None, x_squared_norms=None,
-                    init_size=None):
+                    init_size=None, metric='euclidean', metric_kwargs=None):
     """Compute the initial centroids
 
     Parameters
@@ -943,7 +945,8 @@ def _init_centroids(X, k, init, random_state=None, x_squared_norms=None,
 
     if isinstance(init, string_types) and init == 'k-means++':
         centers = _k_init(X, k, random_state=random_state,
-                          x_squared_norms=x_squared_norms)
+                          x_squared_norms=x_squared_norms,
+                          metric=metric, metric_kwargs=metric_kwargs)
     elif isinstance(init, string_types) and init == 'random':
         seeds = random_state.permutation(n_samples)[:k]
         centers = X[seeds]
@@ -1704,7 +1707,8 @@ class MiniBatchKMeans(KMeans):
                 X, self.n_clusters, self.init,
                 random_state=random_state,
                 x_squared_norms=x_squared_norms,
-                init_size=init_size)
+                init_size=init_size,
+                metric=self.metric, metric_kwargs=self.metric_kwargs)
 
             # Compute the label assignment on the init dataset
             batch_inertia, centers_squared_diff = _mini_batch_step(
@@ -1829,7 +1833,8 @@ class MiniBatchKMeans(KMeans):
             self.cluster_centers_ = _init_centroids(
                 X, self.n_clusters, self.init,
                 random_state=self.random_state_,
-                x_squared_norms=x_squared_norms, init_size=self.init_size)
+                x_squared_norms=x_squared_norms, init_size=self.init_size,
+                metric=self.metric, metric_kwargs=self.metric_kwargs)
 
             self.counts_ = np.zeros(self.n_clusters, dtype=np.int32)
             random_reassign = False
