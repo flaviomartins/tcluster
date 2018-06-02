@@ -282,7 +282,7 @@ else:
     init_size = int(max(opts.init_size, 10 * true_k))
 
 
-init = 'k-means++' if opts.metric in ['euclidean', 'cosine'] else 'random'
+init = 'k-means++' if opts.metric in ['cosine', 'euclidean', 'l2'] else 'random'
 
 
 # #############################################################################
