@@ -141,8 +141,8 @@ def _k_init(X, n_clusters, x_squared_norms, random_state, n_local_trials=None,
         closest_dist_sq = euclidean_distances(
             centers[0, np.newaxis], X, Y_norm_squared=x_squared_norms,
             squared=True)
-    elif metric == 'cosine':
-        closest_dist_sq = cosine_distances(centers[0, np.newaxis], X)
+    else:
+        closest_dist_sq = pairwise_distances(centers[0, np.newaxis], X)
     current_pot = closest_dist_sq.sum()
 
     # Pick the remaining n_clusters-1 points
@@ -157,8 +157,8 @@ def _k_init(X, n_clusters, x_squared_norms, random_state, n_local_trials=None,
         if metric == 'euclidean':
             distance_to_candidates = euclidean_distances(
                 X[candidate_ids], X, Y_norm_squared=x_squared_norms, squared=True)
-        elif metric == 'cosine':
-            distance_to_candidates = cosine_distances(X[candidate_ids], X)
+        else:
+            distance_to_candidates = pairwise_distances(X[candidate_ids], X)
 
         # Decide which candidate is the best
         best_candidate = None
@@ -397,7 +397,7 @@ def k_means(X, n_clusters, init='k-means++', precompute_distances='auto',
                 % n_init, RuntimeWarning, stacklevel=2)
             n_init = 1
 
-    if metric in ['euclidean', 'cosine']:
+    if metric in ['cosine', 'euclidean', 'l2']:
         # subtract of mean of x for more accurate distance computations
         if not sp.issparse(X):
             X_mean = X.mean(axis=0)
@@ -467,7 +467,7 @@ def k_means(X, n_clusters, init='k-means++', precompute_distances='auto',
         best_centers = centers[best]
         best_n_iter = n_iters[best]
 
-    if metric in ['euclidean', 'cosine']:
+    if metric in ['cosine', 'euclidean', 'l2']:
         if not sp.issparse(X):
             if not copy_x:
                 X += X_mean
