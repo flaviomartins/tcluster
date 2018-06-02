@@ -243,6 +243,7 @@ else:
 
 
 init = 'k-means++' if opts.metric in ['cosine', 'euclidean', 'l2'] else 'random'
+metric_kwargs = {'a': opts.a} if opts.metric in ['nkl', 'negative-kullback-leibler'] else None
 
 
 # #############################################################################
@@ -251,16 +252,16 @@ init = 'k-means++' if opts.metric in ['cosine', 'euclidean', 'l2'] else 'random'
 if opts.minibatch:
     km = MiniBatchKMeans(n_clusters=true_k, init=init, max_iter=opts.max_iter, n_init=opts.n_init,
                          max_no_improvement=opts.max_iter / 10, compute_labels=True,
-                         metric=opts.metric, metric_kwargs={'a': opts.a},
+                         metric=opts.metric, metric_kwargs=metric_kwargs,
                          init_size=init_size, batch_size=batch_size, verbose=opts.verbose)
 elif opts.sample:
     km = SampleKMeans(n_clusters=true_k, init=init, max_iter=opts.max_iter, n_init=opts.n_init,
-                      metric=opts.metric, metric_kwargs={'a': opts.a},
+                      metric=opts.metric, metric_kwargs=metric_kwargs,
                       init_size=init_size, verbose=opts.verbose)
 else:
     km = KMeans(n_clusters=true_k, init=init, max_iter=opts.max_iter, n_init=opts.n_init,
                 max_no_improvement=opts.max_iter / 10,
-                metric=opts.metric, metric_kwargs={'a': opts.a},
+                metric=opts.metric, metric_kwargs=metric_kwargs,
                 verbose=opts.verbose)
 
 print("Clustering sparse data with %s" % km)
