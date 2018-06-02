@@ -814,11 +814,16 @@ def _labels_inertia_precompute_dense(X, x_squared_norms, centers, distances,
             X=X, Y=centers, metric=nkl_distance, metric_kwargs=nkl_kwargs)
         labels = D.argmin(axis=1)
         mindist = D[np.arange(n_samples), labels]
-    else:
-        if metric == 'cosine':
-            metric_kwargs = None
+    elif metric in ['cityblock', 'cosine', 'l1', 'l2',
+          'manhattan']:
         labels, mindist = pairwise_distances_argmin_min(
             X=X, Y=centers, metric=metric, metric_kwargs=metric_kwargs)
+    else:
+        D = pairwise_distances_sparse(
+            X=X, Y=centers, metric=jensenshannon_distance)
+        labels = D.argmin(axis=1)
+        mindist = D[np.arange(n_samples), labels]
+
     # cython k-means code assumes int32 inputs
     labels = labels.astype(np.int32)
     if n_samples == distances.shape[0]:
@@ -1243,8 +1248,12 @@ class KMeans(BaseEstimator, ClusterMixin, TransformerMixin):
             nkl_kwargs.update(self.metric_kwargs)
             return pairwise_distances_sparse(
                 X=X, Y=self.cluster_centers_, metric=nkl_distance, metric_kwargs=nkl_kwargs)
-        else:
+        elif self.metric in ['cityblock', 'cosine', 'l1', 'l2',
+                             'manhattan']:
             return pairwise_distances(
+                X=X, Y=self.cluster_centers_, metric=self.metric, metric_kwargs=self.metric_kwargs)
+        else:
+            return pairwise_distances_sparse(
                 X=X, Y=self.cluster_centers_, metric=self.metric, metric_kwargs=self.metric_kwargs)
 
     def predict(self, X):
